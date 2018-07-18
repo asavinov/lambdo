@@ -91,7 +91,38 @@ class Table:
         """
         Populate this table with records.
         """
-        return None
+        #
+        # Stage 1. Resolve the function
+        #
+        func_name = self.table_json.get('function')
+        func = resolve_full_name(func_name)
+
+        #
+        # Stage 2. Prepare input data
+        #
+        inputs = self.table_json.get('inputs')
+        tables = self.workflow.get_tables(inputs)
+
+        #
+        # Stage 3. Prepare argument object to pass to the function as the second argument
+        #
+        model = self.table_json.get('model', {})
+
+        #
+        # Stage 6. Apply function
+        #
+        out = None
+        if not func:
+            this_table_no = self.workflow.get_table_number(self.id)
+            if this_table_no and this_table_no > 0:
+                input_table = self.workflow.tables[this_table_no-1]
+                out = pd.DataFrame(input_table.data)
+        elif not inputs:
+            out = func(**model)
+        else:
+            out = func(inputs, **model)
+
+        return out
 
     def execute(self):
         """
