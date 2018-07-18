@@ -168,11 +168,108 @@ class Column:
             self.column_json['id'] = self.id
             self.columnNo += 1
 
+    def get_definitions(self):
+        """
+        Produce all concrete definitions by imposing extensions onto the base definition.
+        :return: List of concrete definitions. In the case of no extensions, only the base definition is returned.
+        """
+        base = self.column_json.copy()
+        exts = self.column_json.get('extensions')
+
+        if not exts: return [base]  # No extensions
+
+        result = []
+        for ext in exts:
+            e = {**base, **ext}
+            e = dict(e)  # Make copy
+            del e['extensions']  # Remove extensions
+            result.append(e)
+
+        return result
+
     def evaluate(self):
         """
         Evaluate this column.
         """
         log.info("  ===> Start evaluating column '{0}'".format(self.id))
+
+        #
+        # Stage 1: Ensure that "data" field is ready for applying column operations
+        #
+
+        #
+        # Stage 2: Generate a list of concrete definitions by imposing extensions on the base definition
+        # "extensions" field determine family or not.
+        #
+        concrete_definitions = self.get_definitions()
+        num_extensions = len(concrete_definitions)
+
+        for i, definition in enumerate(concrete_definitions):
+
+            #
+            # Stage 3. Resolve the function
+            #
+            func_name = definition.get('function')
+            func = resolve_full_name(func_name)
+            # TODO: Check errors (if func is None) and report in log or at least simply exit
+
+            #
+            # Stage 4. Prepare input data. Its rows (one, many or all) will be passed to the function as the second argument
+            #
+            X = self.table.data
+            inputs = definition.get('inputs', [])
+            if isinstance(inputs, str):  # If a single name is provided (not a list), then we wrap into a list
+                inputs = [inputs]
+            inX = None
+            if inputs:
+                inX = X[inputs]  # Select only specified columns
+            else:
+                inX = X  # All columns
+            # TODO: One one input frame can be used (but previous operations in family can add new columns).
+            # - detect 'data' field overwriting in extensions and report error
+            # - resolve X from data field before the loop and use it in the loop body.
+
+            #
+            # Stage 5. Prepare argument object to pass to the function as the second argument
+            # It might be necessary to instantiate the argument object by using the specified class
+            #
+            model = definition.get('model', {})
+
+            #
+            # Stage 6. Apply function.
+            # Depending on the "scope" the system will organize a loop over records, windows or make single call
+            # It also depends on the call options (how and what to pass in data and model arguments, flatten json, ndarry or Series etc.)
+            #
+            scope = definition.get('scope')
+            options = definition.get('options')
+            out = transform(func, inX, model, scope, options)
+
+            #
+            # Stage 7. Post-process the result by renaming the output columns accordingly (some convention is needed to know what output to expect)
+            #
+            outputs = definition.get('outputs', [])
+            if isinstance(outputs, str):  # If a single name is provided (not a list), then we wrap into a list
+                outputs = [outputs]
+            if not outputs:
+                id = definition.get('id')
+                # TODO: We could use a smarter logic here by finding a parameter of the extension which really changes (is overwritten): inputs, function, outputs, scope, model etc.
+                if num_extensions > 1:
+                    id = id + '_' + str(i)
+                outputs.append(id)
+
+            res = pd.DataFrame(X)  # Copy all input columns to the result
+
+            out = pd.DataFrame(out)  # Result can be ndarray
+            for i, c in enumerate(out.columns):
+                if outputs and i < len(outputs):  # Explicitly specified output column name
+                    n = outputs[i]
+                else:  # Same name - overwrite input column
+                    n = inputs[i]
+                res[n] = out[c]
+
+        #
+        # Stage 8. Post-process the whole family
+        #
 
         log.info("  <=== Finish evaluating column '{0}'".format(self.id))
 

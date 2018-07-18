@@ -1,0 +1,20 @@
+{
+  "id": "Test workflow 5",
+  "tables": [
+    {
+      "id": "Table 1",
+
+      "columns": [
+        {
+          "id": "A",
+          "inputs": ["A"],
+          "scope": "2",
+          "extensions": [
+            {"function": "numpy.core.fromnumeric:sum", "outputs": "A_sum"},
+            {"function": "numpy.core.fromnumeric:mean", "outputs": "A_mean"}
+          ]
+        }
+      ]
+    }
+  ]
+}

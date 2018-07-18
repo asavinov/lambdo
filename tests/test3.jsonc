@@ -1,0 +1,18 @@
+{
+  "id": "Test workflow 3",
+  "tables": [
+    {
+      "id": "Table 1",
+
+      "columns": [
+        {
+          "id": "sum(A)",
+          "function": "numpy.core.fromnumeric:sum",
+          "scope": "2",
+          "inputs": ["A"],
+          "model": {}
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "Test workflow 2",
+  "tables": [
+    {
+      "id": "Table 1",
+
+      "columns": [
+        {
+          "id": "Column 1",
+          "function": "builtins:float",
+          "scope": "one",
+          "inputs": ["A"],
+          "outputs": ["float(A)"]
+        }
+      ]
+    }
+  ]
+}
