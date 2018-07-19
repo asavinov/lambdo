@@ -1,0 +1,36 @@
+{
+  "id": "Example 1",
+  "tables": [
+    {
+      "id": "Source table",
+      "function": "pandas:read_csv",
+      "inputs": [],
+      "model": {
+        "filepath_or_buffer": "../examples/^GSPC.csv",
+        "nrows": 1000
+      }
+    },
+    {
+      "id": "Moving averages",
+
+      "columns": [
+        {
+          "id": "diff_high_low",
+          "function": "example1:diff_func",
+          "scope": "one",
+          "inputs": ["Low", "High"]
+        },
+        {
+          "id": "mean_Diff",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["diff_high_low"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        }
+      ]
+    }
+  ]
+}
