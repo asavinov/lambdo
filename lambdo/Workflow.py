@@ -37,8 +37,9 @@ class Workflow:
 
     def get_tables(self, table_names):
         """Find tables with the specified names"""
+        if not table_names: return None
         tables = filter(lambda x: x.id in table_names, self.tables)
-        return tables
+        return list(tables)
 
     def get_table_number(self, table_name):
         """Find table number in the list"""
@@ -102,6 +103,7 @@ class Table:
         #
         inputs = self.table_json.get('inputs')
         tables = self.workflow.get_tables(inputs)
+        if not tables: tables = []
 
         #
         # Stage 3. Prepare argument object to pass to the function as the second argument
@@ -117,10 +119,12 @@ class Table:
             if this_table_no and this_table_no > 0:
                 input_table = self.workflow.tables[this_table_no-1]
                 out = pd.DataFrame(input_table.data)
-        elif not inputs:
+        elif len(tables) == 0:
             out = func(**model)
+        elif len(tables) == 1:
+            out = func(tables[0].data, **model)
         else:
-            out = func(inputs, **model)
+            out = func(tables, **model)
 
         return out
 

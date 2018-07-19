@@ -31,6 +31,15 @@
           ]
         }
       ]
+    },
+    {
+      "id": "Sink table",
+      "function": "pandas:DataFrame.to_csv",
+      "inputs": ["Moving averages"],
+      "model": {
+        "path_or_buf": "../examples/^GSPC-output.csv",
+        "index": false
+      }
     }
   ]
 }
