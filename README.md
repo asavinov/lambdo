@@ -2,7 +2,9 @@
 
 ## What is Lambdo
 
-Lambdo is a workflow engine which significantly simplifies the analysis process by unifying feature engineering and machine learning operations. Lambdo data analysis workflow does not distinguish between them and any node can be treated either as a feature or as prediction, and both of them can be trained. Such a unification is made possible because of the underlying column-oriented data processing paradigm which treats columns as a first-class element of the data processing pipeline having the same rights as tables. In Lambdo, a workflow consist of table operations which process sets of records and column operations which produce new columns (features) from existing columns. This radically changes the way data is processed.
+Lambdo is a workflow engine which significantly simplifies the analysis process by *unifying* feature engineering and machine learning operations. Lambdo data analysis workflow does not distinguish between them and any node can be treated either as a feature or as prediction, and both of them can be trained.
+
+Such a unification is possible because of the underlying *column-oriented* data processing paradigm which treats columns as first-class elements of the data processing pipeline having the same rights as tables. In Lambdo, a workflow consist of *table population* operations which process sets of records and *column evaluation* operations which produce new columns (features) from existing columns. This radically changes the way data is processed. The same approach is used also in Bistro: <https://github.com/asavinov/bistro>
 
 Here are some unique distinguishing features of Lambdo:
 
@@ -88,4 +90,4 @@ A workflow file is needed to analyze data. Very simple workflows for test purpos
 $ lambdo examples/example1.json
 ```
 
-The workflow will read data, process data, and finally write data to some data sink.
+The workflow reads a CSV file, generates several moving averages for the volume column, and finally writes the result to an output CSV file.
