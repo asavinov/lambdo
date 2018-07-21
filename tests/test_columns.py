@@ -12,7 +12,7 @@ class ColumnsTestCase(unittest.TestCase):
         #
         # Test 1 - row-based apply
         #
-        with open('../tests/test2.jsonc', encoding='utf-8') as f:
+        with open('./tests/test2.json', encoding='utf-8') as f:
             wf_json = json.loads(f.read())
         wf = Workflow(wf_json)
 
@@ -39,7 +39,7 @@ class ColumnsTestCase(unittest.TestCase):
         #
         # Test 2 - rolling sum
         #
-        with open('../tests/test3.jsonc', encoding='utf-8') as f:
+        with open('./tests/test3.json', encoding='utf-8') as f:
             wf_json = json.loads(f.read())
         wf = Workflow(wf_json)
 
@@ -63,7 +63,7 @@ class ColumnsTestCase(unittest.TestCase):
         #
         # Test 3 - same function and inputs but different scopes (windows)
         #
-        with open('../tests/test4.jsonc', encoding='utf-8') as f:
+        with open('./tests/test4.json', encoding='utf-8') as f:
             wf_json = json.loads(f.read())
         wf = Workflow(wf_json)
 
@@ -87,7 +87,7 @@ class ColumnsTestCase(unittest.TestCase):
         #
         # Test 4 - same input, different functions
         #
-        with open('../tests/test5.jsonc', encoding='utf-8') as f:
+        with open('./tests/test5.json', encoding='utf-8') as f:
             wf_json = json.loads(f.read())
         wf = Workflow(wf_json)
 

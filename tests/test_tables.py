@@ -8,7 +8,7 @@ class TablesTestCase(unittest.TestCase):
         pass
 
     def test_read_csv(self):
-        with open('../tests/test1.jsonc', encoding='utf-8') as f:
+        with open('./tests/test1.json', encoding='utf-8') as f:
             wf_json = json.loads(f.read())
         wf = Workflow(wf_json)
 

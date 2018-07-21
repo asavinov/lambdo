@@ -4,6 +4,9 @@ import os
 import sys
 import argparse
 
+import json
+
+from lambdo.Workflow import *
 from lambdo.version import *
 
 import logging
@@ -11,7 +14,13 @@ log = logging.getLogger('MAIN')
 
 
 def run(workflow_file):
-    log.info("Not implemented.")
+
+    with open(workflow_file, encoding='utf-8') as f:
+        wf_json = json.loads(f.read())
+    wf = Workflow(wf_json)
+    wf.execute()
+
+    return 0
 
 def main(args = None):
     if not args: args = sys.argv[1:]

@@ -1,4 +1,4 @@
-# Lambdo: Feature engineering and machine learning - together at last!
+# Feature engineering and machine learning: together at last!
 
 ## What is Lambdo
 
@@ -6,17 +6,17 @@ Lambdo is a workflow engine which significantly simplifies the analysis process 
 
 Here are some unique distinguishing features of Lambdo:
 
-* [No difference between features and models] Lambdo unifies feature engineering and machine learning so that a workflow involves many feature definitions and many machine learning algorithms. It is especially important for deep learning where abstract intermediate features have to be learned.
-* [One workflow for both prediction and training] Lambdo nodes combine applying a transformation with training its model so that nodes of a workflow can be re-trained when required. This also guarantees that the same features will be used for both learning phase and prediction phase.
-* [Columns first] Lambdo workflow use column operations along with table operations which makes many operations much simpler.
-* [User-defined functions for extensibility and flexibility] Lambdo relies on user-defined functions which can be as simple as format conversion and as complex as deep learning networks.
-* [Analysis of time-series and forecasting made easy] Lambdo makes time series analysis much simpler by providing many using mechanisms like column families (for example, several moving averages with different window sizes), window-awareness (generation of windows is a built-in function), pre-defined functions for extracting goals.
+* **No difference between features and models.** Lambdo unifies feature engineering and machine learning so that a workflow involves many feature definitions and many machine learning algorithms. It is especially important for deep learning where abstract intermediate features have to be learned.
+* **One workflow for both prediction and training.** Lambdo nodes combine applying a transformation with training its model so that nodes of a workflow can be re-trained when required. This also guarantees that the same features will be used for both learning phase and prediction phase.
+* **Columns first.**] Lambdo workflow use column operations along with table operations which makes many operations much simpler.
+* **User-defined functions for extensibility.** Lambdo relies on user-defined functions which can be as simple as format conversion and as complex as deep learning networks.
+* **Analysis of time-series and forecasting made easy.** Lambdo makes time series analysis much simpler by providing many using mechanisms like column families (for example, several moving averages with different window sizes), window-awareness (generation of windows is a built-in function), pre-defined functions for extracting goals.
 
 ## How it works
 
 Data processing logic including data sources and data sinks is described in JSON format and stored in a file. At the highest level, Lambdo workflow is a number of table definitions each involving some number of column definitions:
 
-```json
+```javascript
 {
   "tables": [
     "table": { "function": "my_table_func_1", "columns": [...] }
@@ -39,9 +39,7 @@ The function names specified in the workflow represent Python functions. They co
 
 ### Install from source code
 
-Check out the source code
-
-and execute this command in the project directory (where `setup.py` is located):
+Check out the source code and execute this command in the project directory (where `setup.py` is located):
 
 ```
 $ pip install .
@@ -55,48 +53,39 @@ python setup.py install
 
 ### Install from package
 
-Create wheel package of the project:
+Create wheel package:
 ```
 $ python setup.py bdist_wheel
 ```
-The `whl` package is stored in the `dist` folder and can be then installed using `pip`.
+The `whl` package will be stored in the `dist` folder and can then be installed using `pip`.
 
 Execute this command by specifying the `whl` file as a parameter:
 ```
-pip install dist\lambdo-py3-none-any.whl
+pip install dist\lambdo-0.1.0-py3-none-any.whl
 ```
 
 ## How to test
 
 Run tests:
-```
-$ nosetests # nose package is needed
-```
-or
-```
-$ python setup.py test # nose package is needed
-```
-or
+
 ```
 $ python -m unittest discover -s ./tests
 ```
 
+or
+
+```
+$ python setup.py test
+```
+
 ## How to use
-
-To execute a workflow start `lambdo` with this workflow file name as a parameter:
-
-```
-$ lambdo my_workflow.json
-```
-
-The workflow will read data, process data, and finally write data to some data sink.
-
-Test workflows can be found in the `tests` directory and more complex example workflows can be found in the `examples` directory.
 
 If you execute `lambdo` without any options then it will return a short help by describing its usage.
 
-You can check the current version by using the `-v` or `--version` option:
+A workflow file is needed to analyze data. Very simple workflows for test purposes can be found in the `tests` directory. More complex workflows can be found in the `examples` directory. To execute a workflow start `lambdo` with this workflow file name as a parameter:
+
 ```
-$ lambdo -v
-Version 0.1.0
+$ lambdo examples/example1.json
 ```
+
+The workflow will read data, process data, and finally write data to some data sink.

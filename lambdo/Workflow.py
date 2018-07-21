@@ -133,7 +133,7 @@ class Table:
         Execute the whole table.
         This means populate it, execute all columns and then post-process.
         """
-        log.info("===> Start executing table '{0}'".format(self.id))
+        log.info("===> Start populating table '{0}'".format(self.id))
 
         # Add records (populate)
         new_data = self.populate()
@@ -152,7 +152,7 @@ class Table:
         # Table column filter
         #
 
-        log.info("<=== Finish executing table '{0}'".format(self.id))
+        log.info("<=== Finish populating table '{0}'".format(self.id))
 
 class Column:
     """
@@ -215,7 +215,9 @@ class Column:
             #
             func_name = definition.get('function')
             func = resolve_full_name(func_name)
-            # TODO: Check errors (if func is None) and report in log or at least simply exit
+            if not func:
+                log.warning("Cannot resolve user-defined function '{0}'. Skip column definition.".format(func_name))
+                break
 
             #
             # Stage 4. Prepare input data. Its rows (one, many or all) will be passed to the function as the second argument
@@ -226,6 +228,13 @@ class Column:
                 inputs = [inputs]
             inX = None
             if inputs:
+                all_inputs_available = True
+                for col in inputs:
+                    if col not in X.columns:
+                        all_inputs_available = False
+                        log.warning("Input column '{0}' is not available. Skip column definition.".format(col))
+                        break
+                if not all_inputs_available: break
                 inX = X[inputs]  # Select only specified columns
             else:
                 inX = X  # All columns

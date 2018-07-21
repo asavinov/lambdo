@@ -16,7 +16,7 @@ def diff_func(X):
     return X[1] - X[0]
 
 if __name__ == '__main__':
-    with open('../examples/example1.jsonc', encoding='utf-8') as f:
+    with open('../examples/example1.json', encoding='utf-8') as f:
         wf_json = json.loads(f.read())
     wf = Workflow(wf_json)
     wf.execute()
