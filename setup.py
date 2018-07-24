@@ -8,11 +8,11 @@ setup(
     version=__version__,
 
     # descriptive metadata for upload to PyPI
-    description='Workflow engine for time series feature engineering and forecasting',
+    description='Feature engineering and machine learning: together at last!',
     author='Alexandr Savinov',
     author_email='savinov@conceptoriented.org',
     license='MIT License',
-    keywords = "feature engineering, data science, machine learning, forecasting, time series",
+    keywords = "feature engineering machine learning data science analytics data mining forecasting time series",
     url='http://conceptoriented.org',
 
     test_suite='nose.collector',
@@ -33,7 +33,7 @@ setup(
         # If any package contains *.txt or *.rst files, include them:
         '': ['*.md', '*.txt', '*.rst'],
         # And include any *.msg files found in the 'hello' package, too:
-        'hello': ['*.msg'],
+        #'hello': ['*.msg'],
     },
 
     # It will generate lambdo.exe and lambdo-script.py in the Scripts folder of Python
@@ -42,7 +42,7 @@ setup(
             'lambdo=lambdo.main:main'
         ],
     },
-    # These files will be copied to Scripts folder of Python
+    # The files will be copied to Scripts folder of Python
     scripts=[
         #'scripts/lambdo.bat',
         #'scripts/lambdo',
