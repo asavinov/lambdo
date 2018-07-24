@@ -21,7 +21,7 @@ def transform(func, inX, model, scope, options):
 
         out = func(inX, **model)
 
-    elif scope == 'one' or scope == 1:  # Apply function to each row of the table
+    elif scope == 'one' or scope == '1':  # Apply function to each row of the table
 
         #
         # Check if the function is applied to a single column or multiple columns depending on the number of input columns

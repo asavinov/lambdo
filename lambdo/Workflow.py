@@ -26,7 +26,15 @@ class Workflow:
             self.workflow_json['id'] = self.id
             self.workflowNo += 1
 
+        #
+        # Prepare execution environment
+        #
+        imports = self.workflow_json.get('imports', [])
+        self.modules = import_modules(imports)
+
+        #
         # Create table objects
+        #
         self.tables = self.create_tables()
 
     def create_tables(self):

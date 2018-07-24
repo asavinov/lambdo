@@ -1,0 +1,22 @@
+{
+  "id": "Test workflow 6",
+
+  "imports": ["tests.test_udf", "os.path"],
+
+  "tables": [
+    {
+      "id": "Table 1",
+
+      "columns": [
+        {
+          "id": "A",
+          "inputs": ["A"],
+          "scope": "1",
+          "extensions": [
+            {"function": "tests.test_udf:test_import_func", "outputs": "Success"}
+          ]
+        }
+      ]
+    }
+  ]
+}

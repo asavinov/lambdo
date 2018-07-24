@@ -75,5 +75,18 @@ def resolve_name_in_mod(func_name: str, mod):
 
     return last_segment
 
+def import_modules(imports):
+    modules = []
+    for mod_name in imports:
+        try:
+            mod = importlib.import_module(mod_name)
+            modules.append(mod)
+        except ImportError as ie:
+            log.warning(
+                "Cannot import module '{0}'. Ignored. This can cause errors later if its functions are used in the workflow".format(mod_name))
+
+    return modules
+
+
 if __name__ == "__main__":
     pass
