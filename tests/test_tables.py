@@ -8,8 +8,22 @@ class TablesTestCase(unittest.TestCase):
         pass
 
     def test_read_csv(self):
-        with open('./tests/test1.json', encoding='utf-8') as f:
-            wf_json = json.loads(f.read())
+
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "function": "pandas:read_csv",
+                    "inputs": [],
+                    "model": {
+                        "filepath_or_buffer": "../tests/test1.csv",
+                        "nrows": 4
+                    }
+                }
+            ]
+        }
+
         wf = Workflow(wf_json)
 
         wf.execute()

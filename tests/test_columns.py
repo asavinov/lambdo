@@ -10,10 +10,25 @@ class ColumnsTestCase(unittest.TestCase):
     def test_single_columns(self):
 
         #
-        # Test 1 - row-based apply
+        # Row-based apply
         #
-        with open('./tests/test2.json', encoding='utf-8') as f:
-            wf_json = json.loads(f.read())
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "columns": [
+                        {
+                            "id": "My column",
+                            "function": "builtins:float",
+                            "scope": "one",
+                            "inputs": ["A"],
+                            "outputs": ["float(A)"]
+                        }
+                    ]
+                }
+            ]
+        }
         wf = Workflow(wf_json)
 
         # Provide data directly (without table population)
@@ -37,10 +52,25 @@ class ColumnsTestCase(unittest.TestCase):
         self.assertIsInstance(v2, float)
 
         #
-        # Test 2 - rolling sum
+        # Rolling sum
         #
-        with open('./tests/test3.json', encoding='utf-8') as f:
-            wf_json = json.loads(f.read())
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "columns": [
+                        {
+                            "id": "sum(A)",
+                            "function": "numpy.core.fromnumeric:sum",
+                            "scope": "2",
+                            "inputs": ["A"],
+                            "model": {}
+                        }
+                    ]
+                }
+            ]
+        }
         wf = Workflow(wf_json)
 
         # Provide data directly (without table population)
@@ -61,10 +91,28 @@ class ColumnsTestCase(unittest.TestCase):
 
     def test_family_columns(self):
         #
-        # Test 3 - same function and inputs but different scopes (windows)
+        # Same function and inputs but different scopes (windows)
         #
-        with open('./tests/test4.json', encoding='utf-8') as f:
-            wf_json = json.loads(f.read())
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "columns": [
+                        {
+                            "id": "sum(A)",
+                            "function": "numpy.core.fromnumeric:sum",
+                            "inputs": ["A"],
+                            "extensions": [
+                                {"scope": "2"},
+                                {"scope": "3", "outputs": ["sum(A)_win3"]}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
         wf = Workflow(wf_json)
 
         # Provide data directly (without table population)
@@ -85,10 +133,28 @@ class ColumnsTestCase(unittest.TestCase):
         self.assertAlmostEqual(col1[3], 9.0)
 
         #
-        # Test 4 - same input, different functions
+        # Same input, different functions
         #
-        with open('./tests/test5.json', encoding='utf-8') as f:
-            wf_json = json.loads(f.read())
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "columns": [
+                        {
+                            "id": "A",
+                            "inputs": ["A"],
+                            "scope": "2",
+                            "extensions": [
+                                {"function": "numpy.core.fromnumeric:sum", "outputs": "A_sum"},
+                                {"function": "numpy.core.fromnumeric:mean", "outputs": "A_mean"}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
         wf = Workflow(wf_json)
 
         # Provide data directly (without table population)
@@ -107,6 +173,45 @@ class ColumnsTestCase(unittest.TestCase):
 
         self.assertAlmostEqual(col1[1], 1.5)
         self.assertAlmostEqual(col1[2], 2.5)
+
+    def test_standard_functions(self):
+
+        #
+        # Shift one column: https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.shift.html
+        #
+        wf_json = \
+            {
+                "id": "My workflow",
+                "tables": [
+                    {
+                        "id": "My table",
+                        "columns": [
+                            {
+                                "id": "My Column",
+                                "function": "pandas.core.frame:DataFrame.shift",
+                                "scope": "all",
+                                "inputs": ["A"],
+                                "outputs": ["next(A)"],
+                                "model": {"periods": -1}
+                            }
+                        ]
+                    }
+                ]
+            }
+        wf = Workflow(wf_json)
+
+        # Provide data directly (without table population)
+        data = {'A': [1, 2, 3]}
+        df = pd.DataFrame(data)
+        tb = wf.tables[0]
+        tb.data = df
+
+        tb.execute()
+
+        self.assertAlmostEqual(tb.data['next(A)'][0], 2.0)
+        self.assertAlmostEqual(tb.data['next(A)'][1], 3.0)
+        self.assertTrue(pd.isna(tb.data['next(A)'][2]))
+
 
 if __name__ == '__main__':
     unittest.main()

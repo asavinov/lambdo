@@ -8,8 +8,26 @@ class TablesTestCase(unittest.TestCase):
         pass
 
     def test_imports(self):
-        with open('./tests/test6.json', encoding='utf-8') as f:
-            wf_json = json.loads(f.read())
+        wf_json = {
+            "id": "My workflow",
+            "imports": ["tests.test_udf", "os.path"],
+            "tables": [
+                {
+                    "id": "My table",
+                    "columns": [
+                        {
+                            "id": "A",
+                            "inputs": ["A"],
+                            "scope": "1",
+                            "extensions": [
+                                {"function": "tests.test_udf:test_import_func", "outputs": "Success"}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
         wf = Workflow(wf_json)
 
         self.assertEqual(len(wf.modules), 2)
