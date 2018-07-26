@@ -251,10 +251,42 @@ class Column:
             # - resolve X from data field before the loop and use it in the loop body.
 
             #
-            # Stage 5. Prepare argument object to pass to the function as the second argument
-            # It might be necessary to instantiate the argument object by using the specified class
+            # Stage 5. Prepare argument (model) object to pass to the function as the second argument
+            # It can be necessary to instantiate the argument object by using the specified class
+            # It can be necessary to generate (train) a model (we need some specific logic to determine such a need)
             #
-            model = definition.get('model', {})
+            model = definition.get('model')
+            train = definition.get('train')
+            if not model and train is not None:
+
+                # 1. Resolve train function
+                train_func_name = train.get('function')
+                train_func = resolve_full_name(train_func_name)
+                if not train_func:
+                    log.warning("Cannot resolve user-defined training function '{0}'. Skip training.".format(train_func_name))
+                    break
+
+                # TODO:
+                # 2. Determine input data.
+                # We can use exactly same inputs (if not overwritten)
+                # We can use explicitly specified inputs
+                # We can use the whole input table (one of the defaults)
+
+                # TODO:
+                # 3. Determine labels
+                # - no labels at all (no argument is expected) - unsupervised learning
+                # - explicitly specified outputs
+                # - use output column specified in the transformation (but it has to be already available - problem)
+
+                # 4. Retrieve hyper-model
+                train_model = train.get('model', {})
+
+                # 5. Make call and return model
+                model = train_func(inX, **train_model)
+
+            elif not model and not train:
+                model = {}
+
 
             #
             # Stage 6. Apply function.
