@@ -19,7 +19,12 @@ def transform(func, data, model, scope, options):
     out = None
     if scope == 'all':  # Apply function to the whole table
 
-        out = func(data, **model)
+        if isinstance(model, dict):
+            out = func(data, **model)
+        elif isinstance(model, (list, tuple)):
+            out = func(data, *model)
+        else:
+            out = func(data, model)
 
     elif scope == 'one' or scope == '1':  # Apply function to each row of the table
 

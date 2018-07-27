@@ -266,14 +266,17 @@ class Column:
                     log.warning("Cannot resolve user-defined training function '{0}'. Skip training.".format(train_func_name))
                     break
 
-                # TODO:
                 # 2. Determine input data.
-                # We can use exactly same inputs (if not overwritten)
-                # We can use explicitly specified inputs
-                # We can use the whole input table (one of the defaults)
+                labels = train.get('outputs')
+                if not labels:
+                    labels = definition.get('outputs')
+                if labels:
+                    y = X[labels]  # Select only specified columns
+                else:
+                    y = None
 
                 # TODO:
-                # 3. Determine labels
+                # 3. Determine labels from outputs
                 # - no labels at all (no argument is expected) - unsupervised learning
                 # - explicitly specified outputs
                 # - use output column specified in the transformation (but it has to be already available - problem)
@@ -282,7 +285,10 @@ class Column:
                 train_model = train.get('model', {})
 
                 # 5. Make call and return model
-                model = train_func(inX, **train_model)
+                if y is None:
+                    model = train_func(inX, **train_model)
+                else:
+                    model = train_func(inX, y, **train_model)
 
             elif not model and not train:
                 model = {}
@@ -328,4 +334,30 @@ class Column:
 
 
 if __name__ == "__main__":
+
+    from sklearn import datasets, linear_model
+
+    data = {'A': [1, 2, 3, 4], 'B': [1, 3, 3, 1]}
+    df = pd.DataFrame(data)
+    # X numpy array or sparse matrix of shape [n_samples,n_features]
+    # y numpy array of shape [n_samples, n_targets]
+    X = df[['A']].values
+    y = df[['B']].values
+
+    m = regression_fit(df[['A']], df[['B']])
+    B_predict = regression_predict(df[['A']], m)
+
+
+
+    model = linear_model.LinearRegression()
+
+    # sklearn.linear_model.base
+    # LinearRegression.fit
+    model.fit(X, y)
+    # ValueError: Expected 2D array, got 1D array instead: array=[1 2 3]
+    # Reshape your data either using array.reshape(-1, 1) if your data has a single feature or array.reshape(1, -1) if it contains a single sample.
+
+
+    y_pred = model.predict(X)
+
     pass
