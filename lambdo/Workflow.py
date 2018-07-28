@@ -2,6 +2,7 @@ __author__="Alexandr Savinov"
 
 import json
 
+from lambdo.utils import *
 from lambdo.resolve import *
 from lambdo.transform import *
 
@@ -228,12 +229,17 @@ class Column:
                 break
 
             #
-            # Stage 4. Prepare input data. Its rows (one, many or all) will be passed to the function as the second argument
+            # Stage 4. Prepare input data argument to pass to the function (as the first argument)
             #
             X = self.table.data
-            inputs = definition.get('inputs', [])
-            if isinstance(inputs, str):  # If a single name is provided (not a list), then we wrap into a list
-                inputs = [inputs]
+            inputs = definition.get('inputs')
+            if inputs is None:
+                inputs = []
+            inputs = get_columns(inputs, X)
+            if inputs is None:
+                log.warning("Error reading column list. Skip column definition.")
+                break
+
             inX = None
             if inputs:
                 all_inputs_available = True
@@ -246,12 +252,9 @@ class Column:
                 inX = X[inputs]  # Select only specified columns
             else:
                 inX = X  # All columns
-            # TODO: One one input frame can be used (but previous operations in family can add new columns).
-            # - detect 'data' field overwriting in extensions and report error
-            # - resolve X from data field before the loop and use it in the loop body.
 
             #
-            # Stage 5. Prepare argument (model) object to pass to the function as the second argument
+            # Stage 5. Prepare model object to pass to the function (as the second argument)
             # It can be necessary to instantiate the argument object by using the specified class
             # It can be necessary to generate (train) a model (we need some specific logic to determine such a need)
             #
@@ -266,20 +269,24 @@ class Column:
                     log.warning("Cannot resolve user-defined training function '{0}'. Skip training.".format(train_func_name))
                     break
 
-                # 2. Determine input data.
-                labels = train.get('outputs')
-                if not labels:
-                    labels = definition.get('outputs')
-                if labels:
-                    y = X[labels]  # Select only specified columns
-                else:
-                    y = None
+                # 2. TODO: Determine input data
 
-                # TODO:
-                # 3. Determine labels from outputs
+                # 3. Determine labels
                 # - no labels at all (no argument is expected) - unsupervised learning
                 # - explicitly specified outputs
-                # - use output column specified in the transformation (but it has to be already available - problem)
+                # - use output column specified in the transformation (but it has to be already available, e.g., loaded from source data, while the transformation will overwrite it)
+                labels = train.get('outputs')
+                if not labels:
+                    labels = definition.get('outputs')  # Same columns as used by the transformation
+
+                if labels:
+                    labels = get_columns(labels, X)
+                    if labels is None:
+                        log.warning("Error reading column list. Skip column definition.")
+                        break
+                    y = X[labels]  # Select only specified columns
+                else:
+                    y = None  # Do not pass any labels at all
 
                 # 4. Retrieve hyper-model
                 train_model = train.get('model', {})
