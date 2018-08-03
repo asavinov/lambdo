@@ -13,6 +13,7 @@ Here are some unique distinguishing features of Lambdo:
 * **Columns first.**] Lambdo workflow use column operations along with table operations which makes many operations much simpler.
 * **User-defined functions for extensibility.** Lambdo relies on user-defined functions which can be as simple as format conversion and as complex as deep learning networks.
 * **Analysis of time-series and forecasting made easy.** Lambdo makes time series analysis much simpler by providing many using mechanisms like column families (for example, several moving averages with different window sizes), window-awareness (generation of windows is a built-in function), pre-defined functions for extracting goals.
+* **As flexible as programming and as easy as IDE.** Lambdo is positioned between (Python) programming and interactive environments (like KNIME).
 
 ## Why Lambdo?
 
@@ -70,9 +71,20 @@ Most existing machine learning algorithms are not time-aware and they cannot be 
 
 *	Easy control of when to train which nodes. The problem here is that frequently a workflow has to be re-trained periodically but we do not want to re-train all nodes. This mechanism allows us to specify criteria for re-training its models.
 
-## How it works
+## Getting started with Lambdo
 
-Data processing logic including data sources and data sinks is described in JSON format and stored in a file. At the highest level, Lambdo workflow is a number of table definitions each involving some number of column definitions:
+Lambdo implements a novel column-oriented approach to data analysis with data transformations the models of which can be learned.
+
+### Workflow
+
+Lambdo is intended for processing data by using two types of transformations:
+
+* Table transformations produce a new table given one or more input tables.
+* Column transformations produce a new column in the table given one or more input columns.
+
+A workflow is a number of table definitions each having a number of column definitions. These tables and columns compose a graph where edges are dependencies. If an element (table or column) in this graph has another element as its inputs then this dependency is an edge. If an element (table or column) does not have inputs then it is a data source. If an element does not have dependents then it is a data sink.
+
+This data processing logic of Lambdo is represented in JSON format and stored in a workflow file and having the following structure: 
 
 ```javascript
 {
@@ -89,9 +101,55 @@ Data processing logic including data sources and data sinks is described in JSON
 }
 ```
 
-Each table or column definition has to specify a (Python) function name which will actually do data processing. Table definition will use functions for data population. Column definitions will use functions for evaluating new columns. When Lambo executes a workflow, it populates tables according to their definitions and evaluates columns (within tables) according to their definitions. Here it is important to understand that tables are used for set operations while columns are used for operations with functions.
+Each table and column definition has to specify a (Python) function name which will actually do data processing. Table definition will use functions for data population. Column definitions will use functions for evaluating new columns. When Lambo executes a workflow, it populates tables according to their definitions and evaluates columns (within tables) according to their definitions. Here it is important to understand that tables are used for set operations while columns are used for operations with mathematical functions.
 
-The function names specified in the workflow represent Python functions. They could be standard (built-in) Python functions or they could be part of an imported module like `scale` function from the `sklearn.preprocessing` module or `BaseLibSVM.predict` function from the `sklearn.svm.base` module. Functions can be also defined for this specific workflow if they encode some domain-specific feature definition.
+### Table definition
+
+A table definition has to provide some Python function which will populate this table. This function can be standard (built-in) Python function or it could be part of an imported module like `scale` function from the `sklearn.preprocessing` module or `BaseLibSVM.predict` function from the `sklearn.svm.base` module. Functions can be also defined for this specific workflow if they encode some domain-specific feature definition.
+
+For example, if we want to read data then such a table could be defined as follows:
+
+```json
+{
+    "id": "My table",
+    "function": "pandas:read_csv",
+    "inputs": [],
+    "model": {
+        "filepath_or_buffer": "my_file.csv",
+        "nrows": 100
+    }
+}
+```
+
+Here we used a standard function from `pandas` but it could be any other function which returns a `DataFrame`.
+
+Any function takes parameters which are referred to as a *model* and passed to the function. In the above example, we passed input file name and maximum umber of records to be read.
+
+### Column definition
+
+#### Functions
+
+A column definition specifies how its values are computed from the values stored in other columns. The way these values are computed is implemented by some Python function which can be either a standard Python function, a function from some existing module or a user-defined function. Lambdo simply gets the name of this function from the workflow and then calls it to generate this column values.
+
+A function is specified as a pair of its module and function name separated by a colon:
+
+```javascript
+"function": "my_module:my_function"
+```
+
+It is assumed that the first argument of the function is data to be processed and the second argument is a model which parameterizes this transformation. Note however that some function can take other parameters and also the type of these arguments can vary.
+
+#### Function scopes
+
+What data a transformation function receives in its first argument? There are different options starting from a single value and ending with a whole input table. This is determined by the column definition parameter called `scope` which takes the following values:
+
+* Scope `one` or `1` means that Lambdo will apply this function to every row of the input table and the function is expected to return a single value stored as the column value for this record. Type of data passed to the function depends on how many columns the `input` has.
+  * If `input` has only one column then the function will receive a single value.
+  * If `input` has more than 1 columns then the function will receive a `Series` object with their field values.
+* Scope `all` means that the function will be applied to all rows of the table, that is, there will be one call and the whole table will be passed as a parameter. Type of the argument is `DataFrame`.
+* Otherwise the system assume that the function has to be applied to all subsets of the table rows, called windows. Size of the window (number of records in one group) is scope value. For example, `scope: 5` means that each window will consists of 5 records. Type of this group depends on the number of columns in the `input`: 
+  * If `input` has only one column then the function will receive a `Series` of values.
+  * If `input` has more than 1 columns then the function will receive a `DataFrame` object with the records from the group.
 
 ## How to install
 
