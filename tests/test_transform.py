@@ -15,12 +15,12 @@ def udf2(value, addition):  # Single value input. Assumes flattened model
     return value + addition
 
 def udf3(fields):  # Row input. No model
-    return fields[0] + fields[1]  # ndarray as input (row=True)
-    #return fields['col1'] + fields['col2']  # Series as input (row=False)
+    return fields[0] + fields[1]  # Works for both Series and ndarray argument
+    #return fields['col1'] + fields['col2']  # Works for Series only (row=False, data_type="ndarray")
 
 def udf4(fields, addition):  # Row input. Has model
-    return fields[0] + fields[1] + addition  # ndarray as input (row=True)
-    #return fields['col1'] + fields['col2'] + addition  # Series as input (row=False)
+    return fields[0] + fields[1] + addition  # Works for both Series and ndarray argument
+    #return fields['col1'] + fields['col2'] + addition  # Works for Series only (row=False, data_type="ndarray")
 
 class TransformTestCase(unittest.TestCase):
 
@@ -37,7 +37,7 @@ class TransformTestCase(unittest.TestCase):
         # No model
         #
         X = pd.DataFrame(data)
-        y = transform(resolve_full_name('sklearn.preprocessing:scale'), X['col1'], {}, 'all', None)
+        y = transform(resolve_full_name('sklearn.preprocessing:scale'), 'all', X['col1'], None, {}, None)
         # It returns ndarray
 
         self.assertEqual(len(y), 3)
@@ -50,7 +50,7 @@ class TransformTestCase(unittest.TestCase):
         #
         X = pd.DataFrame(data)
         model = {'with_mean': True, 'with_std': False}
-        y = transform(resolve_full_name('sklearn.preprocessing:scale'), X['col2'], model, 'all', None)
+        y = transform(resolve_full_name('sklearn.preprocessing:scale'), 'all', X['col2'], None, model, None)
 
         self.assertAlmostEqual(y.mean(), 0.0)
         self.assertAlmostEqual(y.std(ddof=0), 0.816496580927726)
@@ -62,7 +62,7 @@ class TransformTestCase(unittest.TestCase):
         # No model. Single input
         #
         X = pd.DataFrame(data)
-        out = transform(resolve_full_name('test_transform:udf1'), X[['col2']], {}, 'one', None)
+        out = transform(resolve_full_name('test_transform:udf1'), 'one', X[['col2']], None, {}, None)
 
         self.assertEqual(len(out), 3)
 
@@ -75,7 +75,7 @@ class TransformTestCase(unittest.TestCase):
         #
         model = {'addition': 1.0}
         X = pd.DataFrame(data)
-        out = transform(resolve_full_name('test_transform:udf2'), X['col2'], model, 'one', None)
+        out = transform(resolve_full_name('test_transform:udf2'), 'one', X['col2'], None, model, None)
 
         self.assertEqual(len(out), 3)
 
@@ -87,7 +87,7 @@ class TransformTestCase(unittest.TestCase):
         # No model. Row input
         #
         X = pd.DataFrame(data)
-        out = transform(resolve_full_name('test_transform:udf3'), X[['col1', 'col2']], {}, 'one', None)
+        out = transform(resolve_full_name('test_transform:udf3'), 'one', X[['col1', 'col2']], None, {}, None)
 
         self.assertEqual(len(out), 3)
 
@@ -100,7 +100,7 @@ class TransformTestCase(unittest.TestCase):
         #
         model = {'addition': 1.0}
         X = pd.DataFrame(data)
-        out = transform(resolve_full_name('test_transform:udf4'), X[['col1', 'col2']], model, 'one', None)
+        out = transform(resolve_full_name('test_transform:udf4'), 'one', X[['col1', 'col2']], None, model, None)
 
         self.assertEqual(len(out), 3)
 

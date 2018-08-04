@@ -7,11 +7,19 @@ import logging
 log = logging.getLogger('TRANSFORM')
 
 
-def transform(func, data, model, scope, options):
+def transform(func, scope, data, data_type, model, model_type):
     """
     Apply the specified transformation to the data by producing new column.
     :return: None. The generated columns will be added to the input data frame.
     """
+
+    #
+    # Cast to the necessary argument type expected by the function
+    #
+    if data_type == 'ndarray':
+        data_arg = data.values
+    else:
+        data_arg = data
 
     #
     # Apply function depending on the scope
@@ -20,11 +28,11 @@ def transform(func, data, model, scope, options):
     if scope == 'all':  # Apply function to the whole table
 
         if isinstance(model, dict):
-            out = func(data, **model)
+            out = func(data_arg, **model)
         elif isinstance(model, (list, tuple)):
-            out = func(data, *model)
+            out = func(data_arg, *model)
         else:
-            out = func(data, model)
+            out = func(data_arg, model)
 
     elif scope == 'one' or scope == '1':  # Apply function to each row of the table
 
@@ -32,7 +40,7 @@ def transform(func, data, model, scope, options):
         # Check if the function is applied to a single column or multiple columns depending on the number of input columns
         #
 
-        if isinstance(data, pd.Series) or (isinstance(data, pd.DataFrame) and len(data.columns) == 1):  # Apply to a series. UDF will get single value
+        if isinstance(data, pd.Series) or ((isinstance(data, pd.DataFrame) and len(data.columns) == 1)):  # Apply to a series. UDF will get single value
             if isinstance(data, pd.DataFrame):
                 ser = data[data.columns[0]]
             else:
@@ -42,15 +50,17 @@ def transform(func, data, model, scope, options):
             # Alternative ways to pass model: 1) flatten JSON 2) as one JSON argument 3) as one custom Python object
             #
             out = pd.Series.apply(ser, func, **model)  # Flatten model. One argument for each key of the model dictinary in UDF has to be declared.
-            #out = pd.Series.apply(ser, func, args=(model,))  # Model object as a whole. One argument in UDF has to be declared with the name 'model'
 
         elif isinstance(data, pd.DataFrame):  # Apply to a frame. UDF will get a row of values
             # Notes:
             # - UDF expects one row as a data input (raw=True - ndarry, raw=False - Series)
             # - model (arguments) cannot be None, so we need to guarantee that we do not pass None
 
-            out = pd.DataFrame.apply(data, func, axis=1, raw=True, **model)
-            #out = pd.DataFrame.apply(inX, func, axis=1, raw=True, args=(model,))
+            if data_type == 'ndarray':
+                out = pd.DataFrame.apply(data, func, axis=1, raw=True, **model)
+            else:
+                out = pd.DataFrame.apply(data, func, axis=1, raw=False, **model)
+
         else:
             return None  # TODO: Either error or implement ndarray and other possible types
 

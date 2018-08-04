@@ -209,6 +209,7 @@ class Column:
         #
         # Stage 1: Ensure that "data" field is ready for applying column operations
         #
+        table = self.table.data  # Table the columns will be added to
 
         #
         # Stage 2: Generate a list of concrete definitions by imposing extensions on the base definition
@@ -228,30 +229,33 @@ class Column:
                 log.warning("Cannot resolve user-defined function '{0}'. Skip column definition.".format(func_name))
                 break
 
+            scope = definition.get('scope')
+
             #
             # Stage 4. Prepare input data argument to pass to the function (as the first argument)
             #
-            X = self.table.data
+            data = table
             inputs = definition.get('inputs')
             if inputs is None:
                 inputs = []
-            inputs = get_columns(inputs, X)
+            inputs = get_columns(inputs, data)
             if inputs is None:
                 log.warning("Error reading column list. Skip column definition.")
                 break
 
-            inX = None
             if inputs:
                 all_inputs_available = True
                 for col in inputs:
-                    if col not in X.columns:
+                    if col not in data.columns:
                         all_inputs_available = False
                         log.warning("Input column '{0}' is not available. Skip column definition.".format(col))
                         break
                 if not all_inputs_available: break
-                inX = X[inputs]  # Select only specified columns
+                data = data[inputs]  # Select only specified columns
             else:
-                inX = X  # All columns
+                pass  # All columns
+
+            data_type = definition.get('data_type')
 
             #
             # Stage 5. Prepare model object to pass to the function (as the second argument)
@@ -259,7 +263,9 @@ class Column:
             # It can be necessary to generate (train) a model (we need some specific logic to determine such a need)
             #
             model = definition.get('model')
+            model_type = definition.get('model_type')
             train = definition.get('train')
+
             if not model and train is not None:
 
                 # 1. Resolve train function
@@ -280,22 +286,33 @@ class Column:
                     labels = definition.get('outputs')  # Same columns as used by the transformation
 
                 if labels:
-                    labels = get_columns(labels, X)
+                    labels = get_columns(labels, table)
                     if labels is None:
                         log.warning("Error reading column list. Skip column definition.")
                         break
-                    y = X[labels]  # Select only specified columns
+                    y = table[labels]  # Select only specified columns
                 else:
                     y = None  # Do not pass any labels at all
 
                 # 4. Retrieve hyper-model
                 train_model = train.get('model', {})
 
+                # Cast data argument
+                if data_type == 'ndarray':
+                    data_arg = data.values
+                    if y is not None:
+                        y_arg = y.values
+                else:
+                    data_arg = data
+                    if y is not None:
+                        y_arg = y
+
                 # 5. Make call and return model
                 if y is None:
-                    model = train_func(inX, **train_model)
+                    model = train_func(data_arg, **train_model)
                 else:
-                    model = train_func(inX, y, **train_model)
+                    model = train_func(data_arg, y_arg)
+                    #model = train_func(data_arg, y_arg, **train_model)
 
             elif not model and not train:
                 model = {}
@@ -306,9 +323,8 @@ class Column:
             # Depending on the "scope" the system will organize a loop over records, windows or make single call
             # It also depends on the call options (how and what to pass in data and model arguments, flatten json, ndarry or Series etc.)
             #
-            scope = definition.get('scope')
-            options = definition.get('options')
-            out = transform(func, inX, model, scope, options)
+
+            out = transform(func, scope, data, data_type, model, model_type)
 
             #
             # Stage 7. Post-process the result by renaming the output columns accordingly (some convention is needed to know what output to expect)
@@ -323,15 +339,13 @@ class Column:
                     id = id + '_' + str(i)
                 outputs.append(id)
 
-            res = pd.DataFrame(X)  # Copy all input columns to the result
-
             out = pd.DataFrame(out)  # Result can be ndarray
             for i, c in enumerate(out.columns):
                 if outputs and i < len(outputs):  # Explicitly specified output column name
                     n = outputs[i]
                 else:  # Same name - overwrite input column
                     n = inputs[i]
-                res[n] = out[c]
+                table[n] = out[c]
 
         #
         # Stage 8. Post-process the whole family
@@ -341,30 +355,4 @@ class Column:
 
 
 if __name__ == "__main__":
-
-    from sklearn import datasets, linear_model
-
-    data = {'A': [1, 2, 3, 4], 'B': [1, 3, 3, 1]}
-    df = pd.DataFrame(data)
-    # X numpy array or sparse matrix of shape [n_samples,n_features]
-    # y numpy array of shape [n_samples, n_targets]
-    X = df[['A']].values
-    y = df[['B']].values
-
-    m = regression_fit(df[['A']], df[['B']])
-    B_predict = regression_predict(df[['A']], m)
-
-
-
-    model = linear_model.LinearRegression()
-
-    # sklearn.linear_model.base
-    # LinearRegression.fit
-    model.fit(X, y)
-    # ValueError: Expected 2D array, got 1D array instead: array=[1 2 3]
-    # Reshape your data either using array.reshape(-1, 1) if your data has a single feature or array.reshape(1, -1) if it contains a single sample.
-
-
-    y_pred = model.predict(X)
-
     pass

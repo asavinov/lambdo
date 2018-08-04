@@ -99,10 +99,10 @@ class TrainTestCase(unittest.TestCase):
 
         wf.execute()
 
-        self.assertAlmostEqual(wf.tables[0].data['B'][0], 2.0)
-        self.assertAlmostEqual(wf.tables[0].data['B'][1], 2.0)
-        self.assertAlmostEqual(wf.tables[0].data['B'][2], 2.0)
-        self.assertAlmostEqual(wf.tables[0].data['B'][3], 2.0)
+        self.assertAlmostEqual(tb.data['B'][0], 2.0)
+        self.assertAlmostEqual(tb.data['B'][1], 2.0)
+        self.assertAlmostEqual(tb.data['B'][2], 2.0)
+        self.assertAlmostEqual(tb.data['B'][3], 2.0)
 
         pass
 
