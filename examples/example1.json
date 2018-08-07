@@ -11,13 +11,49 @@
       }
     },
     {
+      "id": "Derived columns",
+
+      "columns": [
+        {
+          "id": "diff_high_low",
+          "function": "example1:diff_fn",
+          "inputs": ["High", "Low"]
+        },
+        {
+          "id": "diff_close_open",
+          "function": "example1:diff_fn",
+          "inputs": ["Close", "Open"]
+        }
+      ]
+    },
+    {
       "id": "Moving averages",
 
       "columns": [
         {
+          "id": "mean_Diff_high_low",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["diff_high_low"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "mean_Diff_close_open",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["diff_high_low"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
           "id": "mean_Volume",
           "function": "numpy.core.fromnumeric:mean",
-          "inputs": ["Volume"],
+          "inputs": ["diff_close_open"],
           "extensions": [
             {"scope": "10"},
             {"scope": "5"},
@@ -27,10 +63,33 @@
       ]
     },
     {
+      "id": "Analytic features",
+
+      "columns": [
+        {
+          "id": "trend_Close",
+          "function": "example1:linear_trend_fn",
+          "inputs": ["Adj Close"],
+          "extensions": [
+            {"scope": "20"},
+            {"scope": "10"},
+            {"scope": "5"}
+          ]
+        },
+        {
+          "id": "Goal",
+          "function": "pandas.core.frame:DataFrame.shift",
+          "scope": "all",
+          "inputs": ["Adj Close"],
+          "model": {"periods": -1}
+        }
+      ]
+    },
+    {
       "id": "Sink table",
       "function": "pandas:DataFrame.to_csv",
-      "inputs": ["Moving averages"],
-      "model": {
+      "inputs": ["Analytic features"],
+     "model": {
         "path_or_buf": "../examples/^GSPC-output.csv",
         "index": false
       }

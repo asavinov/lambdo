@@ -24,6 +24,8 @@ setup(
         'scipy>=1.1.0',
         'pandas>=0.23.3',
         'scikit-learn>=0.19.1',
+        'statsmodels>=0.9.0',
+        'patsy>=0.5.0',
     ],
     zip_safe=True,
 

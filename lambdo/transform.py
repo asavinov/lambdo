@@ -34,7 +34,7 @@ def transform(func, scope, data, data_type, model, model_type):
         else:
             out = func(data_arg, model)
 
-    elif scope == 'one' or scope == '1':  # Apply function to each row of the table
+    elif scope is None or scope == 'one' or scope == '1':  # Apply function to each row of the table
 
         #
         # Check if the function is applied to a single column or multiple columns depending on the number of input columns
@@ -83,7 +83,10 @@ def transform(func, scope, data, data_type, model, model_type):
             by_window = pd.DataFrame.rolling(data, **rolling_args)  # as_index=False - aggregations will produce flat DataFrame instead of Series with index
 
             # Apply function to all windows
-            out = by_window[in_column].apply(func, **model)  # udf will get a series/ndarray with group values and it has to return one (aggregated) value
+            if data_type == 'ndarray':
+                out = by_window[in_column].apply(func, raw=True, **model)
+            else:
+                out = by_window[in_column].apply(func, raw=False, **model)
 
         else:  # Moving aggregation of multiple input columns (sub-dataframe as function argument)
 
