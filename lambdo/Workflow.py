@@ -177,6 +177,18 @@ class Table:
                 # By default, remove predicate columns because they are considered auxiliary and needed only for the purpose of removing rows
                 self.data.drop(columns=pred_cols, inplace=True)
 
+        #
+        # Column filter
+        #
+        columns_exclude = []
+        for i, col in enumerate(self.columns):
+            ex = col.column_json.get("exclude")
+            if ex is True:
+                columns_exclude.append(col.id)
+
+        if columns_exclude:
+            self.data.drop(columns=columns_exclude, inplace=True)
+
         log.info("<=== Finish populating table '{0}'".format(self.id))
 
 class Column:
