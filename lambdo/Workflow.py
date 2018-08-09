@@ -154,12 +154,19 @@ class Table:
             col.evaluate()
 
         #
-        # Table row filter
+        # Row filter
         #
+        row_filter = self.table_json.get("row_filter")
+        if row_filter:
+            drop_cols = row_filter.get("dropna")
+            if isinstance(drop_cols, bool) and drop_cols is True:
+                self.data.dropna(inplace=True)
+            elif isinstance(drop_cols, (str, list)):
+                cols = get_columns(drop_cols, self.data)
+                self.data.dropna(subset=cols, inplace=True)
+            elif drop_cols is not None:
+                log.warning("Unknown dropna in row filter '{0}'. Dropna is either boolean or a list of columns.".format(drop_cols))
 
-        #
-        # Table column filter
-        #
 
         log.info("<=== Finish populating table '{0}'".format(self.id))
 
@@ -311,8 +318,10 @@ class Column:
                 if y is None:
                     model = train_func(data_arg, **train_model)
                 else:
-                    model = train_func(data_arg, y_arg)
-                    #model = train_func(data_arg, y_arg, **train_model)
+                    if train_model is None:
+                        model = train_func(data_arg, y_arg)
+                    else:
+                        model = train_func(data_arg, y_arg, **train_model)
 
             elif not model and not train:
                 model = {}
