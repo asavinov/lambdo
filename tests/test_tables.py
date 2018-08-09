@@ -58,6 +58,30 @@ class TablesTestCase(unittest.TestCase):
         self.assertEqual(len(tb.data.columns), 2)
         self.assertEqual(len(tb.data), 1)
 
+    def test_predicate(self):
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "row_filter": {"predicate": ["B", "C"]}
+                }
+            ]
+        }
+
+        wf = Workflow(wf_json)
+
+        # Provide data directly (without table population)
+        data = {'A': [1, 2, 3], 'B': [True, True, False], 'C': [True, False, False]}
+        df = pd.DataFrame(data)
+        tb = wf.tables[0]
+        tb.data = df
+
+        tb.execute()
+
+        self.assertEqual(len(tb.data.columns), 1)  # Predicate columns will be removed by default
+        self.assertEqual(len(tb.data), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -167,6 +167,15 @@ class Table:
             elif drop_cols is not None:
                 log.warning("Unknown dropna in row filter '{0}'. Dropna is either boolean or a list of columns.".format(drop_cols))
 
+            predicate = row_filter.get("predicate")
+            if predicate:
+                pred_cols = get_columns(predicate, self.data)
+                for col in pred_cols:
+                    pred_series = self.data[col]
+                    self.data = self.data[pred_series] # Apply filter - only rows with true values will remain
+
+                # By default, remove predicate columns because they are considered auxiliary and needed only for the purpose of removing rows
+                self.data.drop(columns=pred_cols, inplace=True)
 
         log.info("<=== Finish populating table '{0}'".format(self.id))
 
