@@ -1,7 +1,9 @@
 # Change Log
 
-* v0.".0 (2018-07-xx)
-  * Model training
+* v0.2.0-SNAPSHOT - in development
+  * Column exclusion flag in the definition
+  * Table row filter 
+  * Training a model 
 
 * v0.1.0 (2018-07-21)
   * Extensions for column definitions

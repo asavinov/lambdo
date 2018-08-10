@@ -48,7 +48,7 @@ class TablesTestCase(unittest.TestCase):
         wf = Workflow(wf_json)
 
         # Provide data directly (without table population)
-        data = {'A': [1, 2, np.nan], 'B': [4, np.nan, np.nan]}
+        data = {'A': [np.nan, 2, 3], 'B': [np.nan, 5, np.nan]}
         df = pd.DataFrame(data)
         tb = wf.tables[0]
         tb.data = df

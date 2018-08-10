@@ -177,6 +177,8 @@ class Table:
                 # By default, remove predicate columns because they are considered auxiliary and needed only for the purpose of removing rows
                 self.data.drop(columns=pred_cols, inplace=True)
 
+            self.data.reset_index(drop=True, inplace=True)  # Ensure that tables always have 0-based index with continuous range
+
         #
         # Column filter
         #
@@ -375,7 +377,7 @@ class Column:
                     n = outputs[i]
                 else:  # Same name - overwrite input column
                     n = inputs[i]
-                table[n] = out[c]
+                table[n] = out[c]  # A column is attached by matching indexes so indexes have to be consistent (the same)
 
         #
         # Stage 8. Post-process the whole family
