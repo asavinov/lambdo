@@ -371,6 +371,8 @@ class Column:
                     id = id + '_' + str(i)
                 outputs.append(id)
 
+            # TODO: There result could be a complex object, while some option (like 'result_path') could provide a path to access it, so we need to be able to retrieve the result (either here or in transform function)
+            # TODO: The result can be Series/listndarray(1d or 2d) and we need to convert it to DataFrame by using the original index.
             out = pd.DataFrame(out)  # Result can be ndarray
             for i, c in enumerate(out.columns):
                 if outputs and i < len(outputs):  # Explicitly specified output column name

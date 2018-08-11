@@ -104,8 +104,6 @@ def transform(func, scope, data, data_type, model, model_type):
 
             out = idx_window.apply(lambda x: window_fn(x, func))
 
-    # TODO: The result could be ndarray and then convert it to data frame with the original index
-
     return out
 
 

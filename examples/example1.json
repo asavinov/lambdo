@@ -83,6 +83,24 @@
           "inputs": ["Adj Close"],
           "model": {"periods": -1}
         }
+      ],
+      "row_filter": {"dropna": true}
+    },
+    {
+      "id": "Prediction",
+
+      "columns": [
+        {
+          "id": "Predict_Goal",
+          "function": "example1:gb_predict",
+          "scope": "all",
+          "inputs": ["Open", "High", "Low", "Adj Close", "Volume", "diff_high_low", "diff_close_open", "mean_Diff_high_low_0", "mean_Diff_high_low_1", "mean_Diff_high_low_2", "mean_Diff_close_open_0", "mean_Diff_close_open_1", "mean_Diff_close_open_2"],
+          "train": {
+            "function": "example1:gb_fit",
+            "model": {"n_estimators": 500, "max_depth": 4, "min_samples_split": 2, "learning_rate": 0.01, "loss": "ls"},
+            "outputs": ["Goal"]
+          }
+        }
       ]
     },
     {
