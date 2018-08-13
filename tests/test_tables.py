@@ -110,6 +110,51 @@ class TablesTestCase(unittest.TestCase):
         self.assertEqual(len(tb.data.columns), 1)
         self.assertEqual(len(tb.data), 3)
 
+    def test_column_filter(self):
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "column_filter": {"exclude": ["B", "C"]}
+                }
+            ]
+        }
+        wf = Workflow(wf_json)
+
+        # Provide data directly (without table population)
+        data = {'A': [1, 2, 3], 'B': [4, 5, 6], 'C': [7, 8, 9]}
+        df = pd.DataFrame(data)
+        tb = wf.tables[0]
+        tb.data = df
+
+        tb.execute()
+
+        self.assertEqual(len(tb.data.columns), 1)
+        self.assertEqual(len(tb.data), 3)
+
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "column_filter": ["A", "B"]
+                }
+            ]
+        }
+        wf = Workflow(wf_json)
+
+        # Provide data directly (without table population)
+        data = {'A': [1, 2, 3], 'B': [4, 5, 6], 'C': [7, 8, 9]}
+        df = pd.DataFrame(data)
+        tb = wf.tables[0]
+        tb.data = df
+
+        tb.execute()
+
+        self.assertEqual(len(tb.data.columns), 2)
+        self.assertEqual(len(tb.data), 3)
+
 
 if __name__ == '__main__':
     unittest.main()

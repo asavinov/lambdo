@@ -2,6 +2,7 @@
 
 * v0.2.0-SNAPSHOT - in development
   * Column exclusion flag in the definition
+  * Table column filter 
   * Table row filter 
   * Training a model 
 

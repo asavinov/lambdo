@@ -182,14 +182,23 @@ class Table:
         #
         # Column filter
         #
+
+        # Remove column which were marked for removal in their definition
         columns_exclude = []
         for i, col in enumerate(self.columns):
-            ex = col.column_json.get("exclude")
+            ex = col.column_json.get("exclude")  # If a column definition has this flag then it will be removed
             if ex is True:
                 columns_exclude.append(col.id)
 
         if columns_exclude:
             self.data.drop(columns=columns_exclude, inplace=True)
+
+        # Remove columns from the list
+        column_filter = self.table_json.get("column_filter")
+        if column_filter:
+            include_columns = get_columns(column_filter, self.data)
+            if include_columns:
+                self.data = self.data[include_columns]
 
         log.info("<=== Finish populating table '{0}'".format(self.id))
 

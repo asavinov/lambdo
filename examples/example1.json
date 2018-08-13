@@ -8,7 +8,9 @@
       "model": {
         "filepath_or_buffer": "../examples/^GSPC.csv",
         "nrows": 1000
-      }
+      },
+
+      "column_filter": {"exclude": ["Date"]}
     },
     {
       "id": "Derived columns",
@@ -24,7 +26,9 @@
           "function": "example1:diff_fn",
           "inputs": ["Close", "Open"]
         }
-      ]
+      ],
+
+      "column_filter": {"exclude": ["Close"]}
     },
     {
       "id": "Moving averages",
@@ -84,6 +88,7 @@
           "model": {"periods": -1}
         }
       ],
+
       "row_filter": {"dropna": true}
     },
     {
@@ -94,7 +99,7 @@
           "id": "Predict_Goal",
           "function": "example1:gb_predict",
           "scope": "all",
-          "inputs": ["Open", "High", "Low", "Adj Close", "Volume", "diff_high_low", "diff_close_open", "mean_Diff_high_low_0", "mean_Diff_high_low_1", "mean_Diff_high_low_2", "mean_Diff_close_open_0", "mean_Diff_close_open_1", "mean_Diff_close_open_2"],
+          "inputs": {"exclude": ["Goal"]},
           "train": {
             "function": "example1:gb_fit",
             "model": {"n_estimators": 500, "max_depth": 4, "min_samples_split": 2, "learning_rate": 0.01, "loss": "ls"},
@@ -107,7 +112,7 @@
       "id": "Sink table",
       "function": "pandas:DataFrame.to_csv",
       "inputs": ["Analytic features"],
-     "model": {
+      "model": {
         "path_or_buf": "../examples/^GSPC-output.csv",
         "index": false
       }
