@@ -82,6 +82,57 @@ class TablesTestCase(unittest.TestCase):
         self.assertEqual(len(tb.data.columns), 1)  # Predicate columns will be removed by default
         self.assertEqual(len(tb.data), 1)
 
+    def test_sample(self):
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "row_filter": {"sample": {"frac": 0.6}}
+                }
+            ]
+        }
+
+        wf = Workflow(wf_json)
+
+        # Provide data directly (without table population)
+        data = {'A': [1, 2, 3]}
+        df = pd.DataFrame(data)
+        tb = wf.tables[0]
+        tb.data = df
+
+        tb.execute()
+
+        self.assertEqual(len(tb.data.columns), 1)  # Predicate columns will be removed by default
+        self.assertEqual(len(tb.data), 2)
+
+    def test_slice(self):
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "row_filter": {"slice": {"start": 1, "end": 4, "step": 2}}
+                }
+            ]
+        }
+
+        wf = Workflow(wf_json)
+
+        # Provide data directly (without table population)
+        data = {'A': [1, 2, 3, 4, 5, 6]}
+        df = pd.DataFrame(data)
+        tb = wf.tables[0]
+        tb.data = df
+
+        tb.execute()
+
+        self.assertEqual(len(tb.data.columns), 1)  # Predicate columns will be removed by default
+        self.assertEqual(len(tb.data), 2)
+
+        self.assertEqual(tb.data["A"][0], 2)
+        self.assertEqual(tb.data["A"][1], 4)
+
     def test_exclude(self):
         wf_json = {
             "id": "My workflow",

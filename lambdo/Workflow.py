@@ -158,6 +158,9 @@ class Table:
         #
         row_filter = self.table_json.get("row_filter")
         if row_filter:
+            #
+            # Column(s) with NaN as a predicate
+            #
             drop_cols = row_filter.get("dropna")
             if isinstance(drop_cols, bool) and drop_cols is True:
                 self.data.dropna(inplace=True)
@@ -167,6 +170,9 @@ class Table:
             elif drop_cols is not None:
                 log.warning("Unknown dropna in row filter '{0}'. Dropna is either boolean or a list of columns.".format(drop_cols))
 
+            #
+            # Boolean column(s) as a predicate
+            #
             predicate = row_filter.get("predicate")
             if predicate:
                 pred_cols = get_columns(predicate, self.data)
@@ -177,7 +183,31 @@ class Table:
                 # By default, remove predicate columns because they are considered auxiliary and needed only for the purpose of removing rows
                 self.data.drop(columns=pred_cols, inplace=True)
 
-            self.data.reset_index(drop=True, inplace=True)  # Ensure that tables always have 0-based index with continuous range
+            #
+            # Shuffle
+            #
+            sample = row_filter.get("sample", False)
+            if sample:
+                if isinstance(sample, bool):
+                    self.data = self.data.sample()
+                elif isinstance(sample, dict):
+                    self.data = self.data.sample(**sample)
+                else:
+                    log.warning("'sample' field '{0}' has to be boolean of dict. Ignored.".format(sample))
+                self.data.reset_index(drop=True, inplace=True)
+
+            #
+            # Slice: row numbers as a predicate
+            #
+            slice = row_filter.get("slice")
+            if slice:
+                slice_start = slice.get("start", 0)
+                slice_end = slice.get("end", len(self.data))
+                slice_step = slice.get("step", 1)
+                self.data = self.data.iloc[slice_start:slice_end:slice_step]
+
+            # Ensure that tables always have 0-based index with continuous range
+            self.data.reset_index(drop=True, inplace=True)
 
         #
         # Column filter
