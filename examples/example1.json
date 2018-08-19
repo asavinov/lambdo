@@ -7,7 +7,7 @@
       "function": "pandas:read_csv",
       "inputs": [],
       "model": {
-        "filepath_or_buffer": "../examples/^GSPC.csv",
+        "filepath_or_buffer": "./examples/^GSPC.csv",
         "nrows": 1000
       },
 
@@ -114,7 +114,7 @@
       "function": "pandas:DataFrame.to_csv",
       "inputs": ["Analytic features"],
       "model": {
-        "path_or_buf": "../examples/^GSPC-output.csv",
+        "path_or_buf": "./examples/^GSPC-output.csv",
         "index": false
       }
     }
