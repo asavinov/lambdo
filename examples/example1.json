@@ -1,5 +1,6 @@
 {
   "id": "Example 1",
+  "imports": ["examples.example1"],
   "tables": [
     {
       "id": "Source table",
@@ -18,12 +19,12 @@
       "columns": [
         {
           "id": "diff_high_low",
-          "function": "example1:diff_fn",
+          "function": "examples.example1:diff_fn",
           "inputs": ["High", "Low"]
         },
         {
           "id": "diff_close_open",
-          "function": "example1:diff_fn",
+          "function": "examples.example1:diff_fn",
           "inputs": ["Close", "Open"]
         }
       ],
@@ -72,7 +73,7 @@
       "columns": [
         {
           "id": "trend_Close",
-          "function": "example1:linear_trend_fn",
+          "function": "examples.example1:linear_trend_fn",
           "inputs": ["Adj Close"],
           "extensions": [
             {"scope": "20"},
@@ -97,11 +98,11 @@
       "columns": [
         {
           "id": "Predict_Goal",
-          "function": "example1:gb_predict",
+          "function": "examples.example1:gb_predict",
           "scope": "all",
           "inputs": {"exclude": ["Goal"]},
           "train": {
-            "function": "example1:gb_fit",
+            "function": "examples.example1:gb_fit",
             "model": {"n_estimators": 500, "max_depth": 4, "min_samples_split": 2, "learning_rate": 0.01, "loss": "ls"},
             "outputs": ["Goal"]
           }

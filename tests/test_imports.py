@@ -10,7 +10,7 @@ class TablesTestCase(unittest.TestCase):
     def test_imports(self):
         wf_json = {
             "id": "My workflow",
-            "imports": ["tests.test_udf", "os.path"],
+            "imports": ["tests.udf", "os.path"],
             "tables": [
                 {
                     "id": "My table",
@@ -20,7 +20,7 @@ class TablesTestCase(unittest.TestCase):
                             "inputs": ["A"],
                             "scope": "1",
                             "extensions": [
-                                {"function": "tests.test_udf:test_import_func", "outputs": "Success"}
+                                {"function": "tests.udf:user_import_fn", "outputs": "Success"}
                             ]
                         }
                     ]
@@ -31,7 +31,7 @@ class TablesTestCase(unittest.TestCase):
         wf = Workflow(wf_json)
 
         self.assertEqual(len(wf.modules), 2)
-        self.assertTrue(hasattr(wf.modules[0], 'test_import_func'))
+        self.assertTrue(hasattr(wf.modules[0], 'user_import_fn'))
 
         # Provide data directly (without table population)
         data = {'A': [1, 2, 3]}

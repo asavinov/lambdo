@@ -82,8 +82,7 @@ def import_modules(imports):
             mod = importlib.import_module(mod_name)
             modules.append(mod)
         except ImportError as ie:
-            log.warning(
-                "Cannot import module '{0}'. Ignored. This can cause errors later if its functions are used in the workflow".format(mod_name))
+            log.warning("Cannot import module '{0}'. Ignored. This can cause errors later if its functions are used in the workflow".format(mod_name))
 
     return modules
 

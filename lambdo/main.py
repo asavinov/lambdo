@@ -26,7 +26,7 @@ def main(args = None):
     if not args: args = sys.argv[1:]
 
     programVersion = 'Version ' + VERSION
-    programDescription = 'Lambdo: Time series data engineering and forecasting. ' + programVersion
+    programDescription = 'Lambdo: Time series feature engineering and forecasting. ' + programVersion
 
     parser = argparse.ArgumentParser(description=programDescription)
     parser.add_argument('-v', '--version', action='version', version=programVersion)

@@ -17,7 +17,7 @@ class TablesTestCase(unittest.TestCase):
                     "function": "pandas:read_csv",
                     "inputs": [],
                     "model": {
-                        "filepath_or_buffer": "../tests/test1.csv",
+                        "filepath_or_buffer": "./tests/test1.csv",
                         "nrows": 4
                     }
                 }
