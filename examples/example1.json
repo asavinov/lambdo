@@ -14,7 +14,88 @@
       "column_filter": {"exclude": ["Date"]}
     },
     {
+      "id": "Volume Weighted Average Price - VWAP",
+
+      "columns": [
+        {
+          "id": "product_CloseVolume",
+          "function": "examples.example1:multiply_fn",
+          "inputs": ["Adj Close","Volume"]
+        },
+        {
+          "id": "sum_Volume",
+          "function": "numpy.core.fromnumeric:sum",
+          "inputs": ["Volume"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "sum_product_CloseVolume",
+          "function": "numpy.core.fromnumeric:sum",
+          "inputs": ["product_CloseVolume"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "vwap_Close",
+          "function": "examples.example1:divide_fn",
+          "extensions": [
+            {"inputs": ["sum_product_CloseVolume_0", "sum_Volume_0"]},
+            {"inputs": ["sum_product_CloseVolume_1", "sum_Volume_1"]},
+            {"inputs": ["sum_product_CloseVolume_2", "sum_Volume_2"]}
+          ]
+        }
+      ],
+
+      "column_filter": {"exclude": [
+        "product_CloseVolume",
+        "sum_Volume_0", "sum_Volume_1", "sum_Volume_2",
+        "sum_product_CloseVolume_0", "sum_product_CloseVolume_1", "sum_product_CloseVolume_2"
+      ]}
+    },
+    {
       "id": "Derived columns",
+
+      "columns": [
+        {
+          "id": "mean_Volume",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["Volume"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "mean_Close",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["Adj Close"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "diff_vwap_Close",
+          "function": "examples.example1:diff_fn",
+          "extensions": [
+            {"inputs": ["vwap_Close_0", "mean_Close_0"]},
+            {"inputs": ["vwap_Close_0", "mean_Close_1"]},
+            {"inputs": ["vwap_Close_0", "mean_Close_2"]}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Moving differences",
 
       "columns": [
         {
@@ -26,15 +107,7 @@
           "id": "diff_close_open",
           "function": "examples.example1:diff_fn",
           "inputs": ["Close", "Open"]
-        }
-      ],
-
-      "column_filter": {"exclude": ["Close"]}
-    },
-    {
-      "id": "Moving averages",
-
-      "columns": [
+        },
         {
           "id": "mean_Diff_high_low",
           "function": "numpy.core.fromnumeric:mean",
@@ -54,18 +127,10 @@
             {"scope": "5"},
             {"scope": "2"}
           ]
-        },
-        {
-          "id": "mean_Volume",
-          "function": "numpy.core.fromnumeric:mean",
-          "inputs": ["diff_close_open"],
-          "extensions": [
-            {"scope": "10"},
-            {"scope": "5"},
-            {"scope": "2"}
-          ]
         }
-      ]
+      ],
+
+      "column_filter": {"exclude": ["Close"]}
     },
     {
       "id": "Analytic features",

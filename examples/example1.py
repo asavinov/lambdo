@@ -9,6 +9,24 @@ import json
 
 from lambdo.Workflow import *
 
+def multiply_fn(X):
+    """
+    Product of the first and second values.
+    """
+    if len(X) < 2: return None
+    if not X[0] or not X[1]: return None
+    if pd.isna(X[0]) or pd.isna(X[1]): return None
+    return X[0] * X[1]
+
+def divide_fn(X):
+    """
+    Divice the first value by the second value.
+    """
+    if len(X) < 2: return None
+    if not X[0] or not X[1]: return None
+    if pd.isna(X[0]) or pd.isna(X[1]): return None
+    return X[0] / X[1]
+
 def diff_fn(X):
     """
     Return difference between first and second fields of the Series.
