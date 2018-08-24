@@ -1,8 +1,66 @@
 __author__="Alexandr Savinov"
 
+import os
+import pickle
+import urllib.parse
+
 import logging
 log = logging.getLogger('UTILS')
 
+def is_valid_uri(uri):
+    """Determine if the string is a valid URL. We use it to distringuish links from workflow variables."""
+    try:
+        result = urllib.parse.urlparse(uri)
+        return result.scheme and result.path
+    except Exception as e:
+        return False
+
+def get_filename_from_uri(uri):
+    """Get local file name given URI."""
+    try:
+        result = urllib.parse.urlparse(uri)
+        return urllib.parse.ParseResult('', *result[1:]).geturl()
+    except:
+        return None
+
+def read_value_from_file(link):
+    """Read Python object from the specified URI treated as a local file."""
+    is_json = link.lower().endswith('json')
+    is_pkl = link.lower().endswith('pkl')
+    pathname = get_filename_from_uri(link)
+
+    ret = None
+    if is_pkl:
+        with open(pathname, 'rb') as file:
+            try:
+                ret = pickle.load(file)
+            except Exception as e:
+                log.error("Error reading from file {0}. Exception: {1}".format(pathname, e))
+                return None
+    elif is_json:
+        return None
+    else:
+        return None
+
+    return ret
+
+def write_value_to_file(link, value):
+    """Write Python object to the specified URI treated as a local file."""
+    is_json = link.lower().endswith('json')
+    is_pkl = link.lower().endswith('pkl')
+    pathname = get_filename_from_uri(link)
+
+    if is_pkl:
+        with open(pathname, 'wb') as file:
+            try:
+                pickle.dump(value, file)
+            except Exception as e:
+                log.error("Error writing to file {0}. Exception: {1}".format(pathname, e))
+                return None
+    elif is_json:
+        pass
+    else:
+        pass
 
 def get_columns(names, df=None):
     """Produce a list of column names by also validating them against the data frame."""
@@ -56,3 +114,69 @@ def get_columns(names, df=None):
         return out
 
     return result
+
+def get_value(ref):
+    """If the value is a reference then de-reference it and return. Otherwise, return this input value."""
+
+    if not isinstance(ref, str):
+        return ref
+
+    if not ref.startswith('$'):
+        return ref
+
+    # Now we know that the value is a reference
+
+    link = ref[1:]
+
+    # De-reference depending on the link type
+    value = None
+
+    # Check if it is URL or workflow variable
+    if is_valid_uri(link):
+        is_file = link.lower().startswith('file://')
+
+        if is_file:
+            value = read_value_from_file(link)
+        else:
+            log.error("Reading values from URI is not implemented.")
+            return None
+
+    else:
+        log.error("Reading values from workflow variables is not implemented.")
+        return None
+
+    return value
+
+def set_value(ref, value):
+    """If the value is a reference then write it to the referenced location."""
+
+    if not isinstance(ref, str):
+        return
+
+    if not ref.startswith('$'):
+        return
+
+    # Now we know that the location is a reference
+
+    link = ref[1:]
+
+    # Check if it is URL or workflow variable
+    if is_valid_uri(link):
+        is_file = link.lower().startswith('file://')
+
+        if is_file:
+            write_value_to_file(link, value)
+        else:
+            log.error("Writing values to URI is not implemented.")
+            return None
+
+    else:
+        log.error("Writing values to workflow variables is not implemented.")
+        return None
+
+
+if __name__ == "__main__":
+    my_obj = "My Object"
+    set_value('$file:///temp/test.pkl', my_obj)
+    my_obj2 = get_value('$file:///temp/test.pkl')
+    pass
