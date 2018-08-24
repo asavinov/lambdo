@@ -44,6 +44,15 @@ class TablesTestCase(unittest.TestCase):
         self.assertEqual(wf.tables[0].data['Success'][0], 'Success')
         self.assertEqual(wf.tables[0].data['Success'].nunique(), 1)
 
+    def test_getset_pkl(self):
+        value = "Value to be stored"
+        json_field = "$file:_test_.pkl"
+
+        set_value(json_field, value)
+        value2 = get_value(json_field)
+
+        self.assertEqual(value, value2)
+
 
 if __name__ == '__main__':
     unittest.main()

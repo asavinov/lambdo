@@ -17,11 +17,18 @@ def is_valid_uri(uri):
 
 def get_filename_from_uri(uri):
     """Get local file name given URI."""
-    try:
-        result = urllib.parse.urlparse(uri)
-        return urllib.parse.ParseResult('', *result[1:]).geturl()
-    except:
-        return None
+    if uri.startswith('file://'):
+        try:
+            result = urllib.parse.urlparse(uri)
+            return urllib.parse.ParseResult('', *result[1:]).geturl()
+        except:
+            return None
+    elif uri.startswith('file:/'):
+        return uri[len('file:/'):]
+    elif uri.startswith('file:'):
+        return uri[len('file:'):]
+    else:
+        return uri
 
 def read_value_from_file(link):
     """Read Python object from the specified URI treated as a local file."""
@@ -133,7 +140,7 @@ def get_value(ref):
 
     # Check if it is URL or workflow variable
     if is_valid_uri(link):
-        is_file = link.lower().startswith('file://')
+        is_file = link.lower().startswith('file:')
 
         if is_file:
             value = read_value_from_file(link)
@@ -162,7 +169,7 @@ def set_value(ref, value):
 
     # Check if it is URL or workflow variable
     if is_valid_uri(link):
-        is_file = link.lower().startswith('file://')
+        is_file = link.lower().startswith('file:')
 
         if is_file:
             write_value_to_file(link, value)
@@ -176,7 +183,4 @@ def set_value(ref, value):
 
 
 if __name__ == "__main__":
-    my_obj = "My Object"
-    set_value('$file:///temp/test.pkl', my_obj)
-    my_obj2 = get_value('$file:///temp/test.pkl')
     pass
