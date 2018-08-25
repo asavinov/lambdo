@@ -278,11 +278,16 @@ class Column:
             # It can be necessary to instantiate the argument object by using the specified class
             # It can be necessary to generate (train) a model (we need some specific logic to determine such a need)
             #
-            model = definition.get('model')
+            model_ref = definition.get('model')
             model_type = definition.get('model_type')
-            train = definition.get('train')
+            if model_ref and isinstance(model_ref, str) and model_ref.startswith('$'):
+                log.info("Load model from {0}.".format(model_ref))
+                model = get_value(model_ref)  # De-reference model which can be represented by-reference (if it is a string starting with $)
+            else:
+                model = model_ref
 
-            if not model and train is not None:
+            train = definition.get('train')
+            if not model and train:
 
                 # 1. Resolve train function
                 train_func_name = train.get('function')
@@ -353,6 +358,11 @@ class Column:
                         model = train_func(data_arg, labels_arg)
                     else:
                         model = train_func(data_arg, labels_arg, **train_model)
+
+                # 6. Each time a new model is generated, we store it in the model field of the definition
+                if model and model_ref:
+                    log.info("Store trained model in {0}.".format(model_ref))
+                    set_value(model_ref, model)
 
             elif not model and not train:
                 model = {}

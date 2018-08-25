@@ -38,12 +38,19 @@ def read_value_from_file(link):
 
     ret = None
     if is_pkl:
-        with open(pathname, 'rb') as file:
-            try:
-                ret = pickle.load(file)
-            except Exception as e:
-                log.error("Error reading from file {0}. Exception: {1}".format(pathname, e))
-                return None
+        if not os.path.exists(pathname):
+            # Having no file means that a value represented by-reference is None
+            return None
+        try:
+            with open(pathname, 'rb') as file:
+                try:
+                    ret = pickle.load(file)
+                except Exception as e:
+                    log.error("Error reading from file {0}. Exception: {1}".format(pathname, e))
+                    return None
+        except IOError as e:
+            log.warning("Error reading from file {0}. Exception: {1}".format(pathname, e))
+            return None
     elif is_json:
         return None
     else:
@@ -58,12 +65,16 @@ def write_value_to_file(link, value):
     pathname = get_filename_from_uri(link)
 
     if is_pkl:
-        with open(pathname, 'wb') as file:
-            try:
-                pickle.dump(value, file)
-            except Exception as e:
-                log.error("Error writing to file {0}. Exception: {1}".format(pathname, e))
-                return None
+        try:
+            with open(pathname, 'wb') as file:
+                try:
+                    pickle.dump(value, file)
+                except Exception as e:
+                    log.error("Error writing to file {0}. Exception: {1}".format(pathname, e))
+                    return
+        except IOError as e:
+            log.warning("Error writing to file {0}. Exception: {1}".format(pathname, e))
+            return
     elif is_json:
         pass
     else:
