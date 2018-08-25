@@ -122,6 +122,17 @@ def get_columns(names, df=None):
 
     return result
 
+def all_columns_exist(names, df):
+    all_columns_available = True
+    for col in names:
+        if col not in df.columns:
+            all_columns_available = False
+            log.warning("Column '{0}' is not available.".format(col))
+            break
+    if not all_columns_available:
+        return False
+    return True
+
 def get_value(ref):
     """If the value is a reference then de-reference it and return. Otherwise, return this input value."""
 

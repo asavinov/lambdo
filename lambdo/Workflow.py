@@ -263,17 +263,13 @@ class Column:
                 log.warning("Error reading column list. Skip column definition.")
                 break
 
-            if inputs:
-                all_inputs_available = True
-                for col in inputs:
-                    if col not in data.columns:
-                        all_inputs_available = False
-                        log.warning("Input column '{0}' is not available. Skip column definition.".format(col))
-                        break
-                if not all_inputs_available: break
-                data = data[inputs]  # Select only specified columns
-            else:
-                pass  # All columns
+            # Validation: check if all explicitly specified columns available
+            if not all_columns_exist(inputs, data):
+                log.warning("Not all columns available. Skip column definition.".format())
+                break
+
+            # Select only specified columns
+            data = data[inputs]
 
             data_type = definition.get('data_type')
 
@@ -295,7 +291,29 @@ class Column:
                     log.warning("Cannot resolve user-defined training function '{0}'. Skip training.".format(train_func_name))
                     break
 
-                # 2. TODO: Determine input data
+                # 2. Filter rows for train data
+                train_table = table
+                train_row_filter = train.get("row_filter")
+                if train_row_filter:
+                    train_table = apply_row_filter(table, train_row_filter)
+
+                # 3. Select columns to use for training
+                train_data = train_table
+                train_inputs = train.get('inputs')
+                if train_inputs is None:
+                    train_inputs = inputs  # Inherit from the 'apply' section
+                train_inputs = get_columns(train_inputs, train_data)
+                if train_inputs is None:
+                    log.warning("Error reading column list for training. Skip column training.")
+                    break
+
+                # Validation: check if all explicitly specified columns available
+                if not all_columns_exist(train_inputs, train_data):
+                    log.warning("Not all columns available for training. Skip column definition.".format())
+                    break
+
+                # Select only specified columns
+                train_data = train_data[train_inputs]
 
                 # 3. Determine labels
                 # - no labels at all (no argument is expected) - unsupervised learning
@@ -310,38 +328,34 @@ class Column:
                     if labels is None:
                         log.warning("Error reading column list. Skip column definition.")
                         break
-                    y = table[labels]  # Select only specified columns
+                    train_labels = train_table[labels]  # Select only specified columns
                 else:
-                    y = None  # Do not pass any labels at all
+                    train_labels = None  # Do not pass any labels at all (unsupervised)
 
                 # 4. Retrieve hyper-model
                 train_model = train.get('model', {})
 
-                # Filter rows for training
-                # TODO:
-
                 # Cast data argument
                 if data_type == 'ndarray':
-                    data_arg = data.values
-                    if y is not None:
-                        y_arg = y.values
+                    data_arg = train_data.values
+                    if train_labels is not None:
+                        labels_arg = train_labels.values
                 else:
-                    data_arg = data
-                    if y is not None:
-                        y_arg = y
+                    data_arg = train_data
+                    if train_labels is not None:
+                        labels_arg = train_labels
 
                 # 5. Call the function and generate a model
-                if y is None:
+                if train_labels is None:
                     model = train_func(data_arg, **train_model)
                 else:
                     if train_model is None:
-                        model = train_func(data_arg, y_arg)
+                        model = train_func(data_arg, labels_arg)
                     else:
-                        model = train_func(data_arg, y_arg, **train_model)
+                        model = train_func(data_arg, labels_arg, **train_model)
 
             elif not model and not train:
                 model = {}
-
 
             #
             # Stage 6. Apply function.
