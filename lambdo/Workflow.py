@@ -158,56 +158,7 @@ class Table:
         #
         row_filter = self.table_json.get("row_filter")
         if row_filter:
-            #
-            # Column(s) with NaN as a predicate
-            #
-            drop_cols = row_filter.get("dropna")
-            if isinstance(drop_cols, bool) and drop_cols is True:
-                self.data.dropna(inplace=True)
-            elif isinstance(drop_cols, (str, list)):
-                cols = get_columns(drop_cols, self.data)
-                self.data.dropna(subset=cols, inplace=True)
-            elif drop_cols is not None:
-                log.warning("Unknown dropna in row filter '{0}'. Dropna is either boolean or a list of columns.".format(drop_cols))
-
-            #
-            # Boolean column(s) as a predicate
-            #
-            predicate = row_filter.get("predicate")
-            if predicate:
-                pred_cols = get_columns(predicate, self.data)
-                for col in pred_cols:
-                    pred_series = self.data[col]
-                    self.data = self.data[pred_series] # Apply filter - only rows with true values will remain
-
-                # By default, remove predicate columns because they are considered auxiliary and needed only for the purpose of removing rows
-                self.data.drop(columns=pred_cols, inplace=True)
-
-            #
-            # Shuffle
-            #
-            sample = row_filter.get("sample", False)
-            if sample:
-                if isinstance(sample, bool):
-                    self.data = self.data.sample()
-                elif isinstance(sample, dict):
-                    self.data = self.data.sample(**sample)
-                else:
-                    log.warning("'sample' field '{0}' has to be boolean of dict. Ignored.".format(sample))
-                self.data.reset_index(drop=True, inplace=True)
-
-            #
-            # Slice: row numbers as a predicate
-            #
-            slice = row_filter.get("slice")
-            if slice:
-                slice_start = slice.get("start", 0)
-                slice_end = slice.get("end", len(self.data))
-                slice_step = slice.get("step", 1)
-                self.data = self.data.iloc[slice_start:slice_end:slice_step]
-
-            # Ensure that tables always have 0-based index with continuous range
-            self.data.reset_index(drop=True, inplace=True)
+            self.data = apply_row_filter(self.data, row_filter)
 
         #
         # Column filter
@@ -366,6 +317,9 @@ class Column:
                 # 4. Retrieve hyper-model
                 train_model = train.get('model', {})
 
+                # Filter rows for training
+                # TODO:
+
                 # Cast data argument
                 if data_type == 'ndarray':
                     data_arg = data.values
@@ -376,7 +330,7 @@ class Column:
                     if y is not None:
                         y_arg = y
 
-                # 5. Make call and return model
+                # 5. Call the function and generate a model
                 if y is None:
                     model = train_func(data_arg, **train_model)
                 else:

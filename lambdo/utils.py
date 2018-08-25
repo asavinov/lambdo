@@ -181,6 +181,62 @@ def set_value(ref, value):
         log.error("Writing values to workflow variables is not implemented.")
         return None
 
+def apply_row_filter(data, row_filter):
+    """Select rows from the specified data frame which satisfy the provided row filter and return the result."""
+
+    #
+    # Column(s) with NaN as a predicate
+    #
+    drop_cols = row_filter.get("dropna")
+    if isinstance(drop_cols, bool) and drop_cols is True:
+        data.dropna(inplace=True)
+    elif isinstance(drop_cols, (str, list)):
+        cols = get_columns(drop_cols, data)
+        data.dropna(subset=cols, inplace=True)
+    elif drop_cols is not None:
+        log.warning("Unknown dropna in row filter '{0}'. Dropna is either boolean or a list of columns.".format(drop_cols))
+
+    #
+    # Boolean column(s) as a predicate
+    #
+    predicate = row_filter.get("predicate")
+    if predicate:
+        pred_cols = get_columns(predicate, data)
+        for col in pred_cols:
+            pred_series = data[col]
+            data = data[pred_series]  # Apply filter - only rows with true values will remain
+
+        # By default, remove predicate columns because they are considered auxiliary and needed only for the purpose of removing rows
+        data.drop(columns=pred_cols, inplace=True)
+
+    #
+    # Shuffle
+    #
+    sample = row_filter.get("sample", False)
+    if sample:
+        if isinstance(sample, bool):
+            data = data.sample()
+        elif isinstance(sample, dict):
+            data = data.sample(**sample)
+        else:
+            log.warning("'sample' field '{0}' has to be boolean of dict. Ignored.".format(sample))
+        data.reset_index(drop=True, inplace=True)
+
+    #
+    # Slice: row numbers as a predicate
+    #
+    slice = row_filter.get("slice")
+    if slice:
+        slice_start = slice.get("start", 0)
+        slice_end = slice.get("end", len(data))
+        slice_step = slice.get("step", 1)
+        data = data.iloc[slice_start:slice_end:slice_step]
+
+    # Ensure that tables always have 0-based index with continuous range
+    data.reset_index(drop=True, inplace=True)
+
+    return data
+
 
 if __name__ == "__main__":
     pass
