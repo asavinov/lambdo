@@ -4,6 +4,8 @@ import os
 import pickle
 import urllib.parse
 
+import pandas as pd
+
 import logging
 log = logging.getLogger('UTILS')
 

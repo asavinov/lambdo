@@ -125,15 +125,18 @@ class Table:
         out = None
         if not func:
             this_table_no = self.workflow.get_table_number(self.id)
-            if this_table_no and this_table_no > 0:
-                input_table = self.workflow.tables[this_table_no-1]
-                out = pd.DataFrame(input_table.data)
+            # TODO: Why do we need -1 here??? Probably here we want to retrieve the previous table and its data in the workflow if input is not specified?
+            #   Solution 1: It is about what to do if no function is specified. Maybe do nothing.
+            #   Solution 2: Maybe inherit the previous table data
+            #if this_table_no and this_table_no > 0:
+            #    input_table = self.workflow.tables[this_table_no-1]
+            #    out = pd.DataFrame(input_table.data)
         elif len(tables) == 0:
             out = func(**model)
         elif len(tables) == 1:
             out = func(tables[0].data, **model)
         else:
-            out = func(tables, **model)
+            out = func([t.data for t in tables], **model)
 
         return out
 
