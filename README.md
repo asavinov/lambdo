@@ -19,36 +19,36 @@ Here are some unique distinguishing features of Lambdo:
 
 # Contents
 
-* [Why Lambdo?](#Why-Lambdo)
-  * [Why feature engineering?](#Why-feature-engineering)
-  * [Uniting feature engineering with data mining](#Uniting-feature-engineering-with-data-mining)
-  * [Any transformation model has an automatic training procedure](#Any-transformation-model-has-an-automatic-training-procedure)
-  * [Columns first: Column-orientation as a basis for feature engineering](#Columns-first-Column-orientation-as-a-basis-for-feature-engineering)
-  * [Time series first: Time series analysis and forecasting made easy](#Time-series-first-Time-series-analysis-and-forecasting-made-easy)
+* [Why Lambdo?](#why-lambdo)
+  * [Why feature engineering?](#why-feature-engineering)
+  * [Uniting feature engineering with data mining](#uniting-feature-engineering-with-data-mining)
+  * [Any transformation model has an automatic training procedure](#any-transformation-model-has-an-automatic-training-procedure)
+  * [Columns first: Column-orientation as a basis for feature engineering](#columns-first-column-orientation-as-a-basis-for-feature-engineering)
+  * [Time series first: Time series analysis and forecasting made easy](#time-series-first-time-series-analysis-and-forecasting-made-easy)
 
-* [Getting started with Lambdo](#Getting-started-with-Lambdo)
-  * [Workflow definition](#Workflow-definition)
-    * [Workflow structure](#Workflow-structure)
-    * [Imports](#Imports)
-  * [Table definition](#Table-definition)
-    * [Table population function](#Table-population-function)
-    * [Column filter](#Column-filter)
-    * [Row filter](#Row-filter)
-  * [Column definition](#Column-definition)
-    * [Column evaluation function](#Column-evaluation-function)
-    * [Function scopes](#Function-scopes)
-    * [Training a model](#Training-a-model)
+* [Getting started with Lambdo](#getting-started-with-lambdo)
+  * [Workflow definition](#workflow-definition)
+    * [Workflow structure](#workflow-structure)
+    * [Imports](#imports)
+  * [Table definition](#table-definition)
+    * [Table population function](#table-population-function)
+    * [Column filter](#column-filter)
+    * [Row filter](#row-filter)
+  * [Column definition](#column-definition)
+    * [Column evaluation function](#column-evaluation-function)
+    * [Function scopes](#function-scopes)
+    * [Training a model](#training-a-model)
 
-* [Examples and analysis templates](#Examples-and-analysis-templates)
-  * [Input and output](#Input-and-output)
+* [Examples and analysis templates](#examples-and-analysis-templates)
+  * [Input and output](#input-and-output)
 
-* [How to install](#How-to-install)
-  * [Install from source code](#Install-from-source-code)
-  * [Install from package](#Install-from-package)
+* [How to install](#how-to-install)
+  * [Install from source code](#install-from-source-code)
+  * [Install from package](#install-from-package)
 
-* [How to test](#How-to-test)
+* [How to test](#how-to-test)
 
-* [How to use](#How-to-use)
+* [How to use](#how-to-use)
 
 # Why Lambdo?
 
