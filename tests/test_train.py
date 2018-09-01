@@ -17,7 +17,7 @@ def train_func_1(value):  # Retrun constant model (no data is needed to train it
 
 def regression_predict(X, model):
     X_array = X.values
-    y = model.predict(X_array)
+    y = model.predict(X_array.reshape(-1, 1))
     return pd.DataFrame(y)
 
 def regression_fit(X, y):

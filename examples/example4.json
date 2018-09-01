@@ -1,0 +1,50 @@
+{
+  "id": "Example 4",
+
+  "imports": ["examples.example3"],
+
+  "tables": [
+    {
+      "id": "Source table",
+      "function": "pandas:read_csv",
+      "inputs": [],
+      "model": {
+        "filepath_or_buffer": "./examples/^GSPC.csv",
+        "nrows": 1000
+      },
+
+      "columns": [
+        {
+          "id": "Date",
+          "function": "pandas.core.tools.datetimes:to_datetime",
+          "scope": "all",
+          "inputs": "Date",
+          "model": {"format": "%Y-%m-%d"}
+        },
+        {
+          "id": "diff_high_low",
+          "function": "examples.example3:diff_fn",
+          "inputs": ["High", "Low"]
+        },
+        {
+          "id": "Close_Tomorrow",
+          "function": "pandas.core.series:Series.shift",
+          "scope": "all",
+          "inputs": ["Close"],
+          "model": {"periods": -1}
+        }
+      ],
+
+      "column_filter": {"exclude": ["Adj Close"]}
+    },
+    {
+      "id": "Sink table",
+      "function": "pandas:DataFrame.to_csv",
+      "inputs": ["Source table"],
+      "model": {
+        "path_or_buf": "./examples/example4-out.csv",
+        "index": false
+      }
+    }
+  ]
+}

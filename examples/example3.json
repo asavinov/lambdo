@@ -1,0 +1,43 @@
+{
+  "id": "Example 3",
+
+  "imports": ["examples.example3"],
+
+  "tables": [
+    {
+      "id": "Source table",
+      "function": "pandas:read_csv",
+      "inputs": [],
+      "model": {
+        "filepath_or_buffer": "./examples/^GSPC.csv",
+        "nrows": 1000
+      },
+
+      "columns": [
+        {
+          "id": "Date",
+          "function": "pandas.core.tools.datetimes:to_datetime",
+          "scope": "one",
+          "inputs": "Date",
+          "model": {"format": "%Y-%m-%d"}
+        },
+        {
+          "id": "diff_high_low",
+          "function": "examples.example3:diff_fn",
+          "inputs": ["High", "Low"]
+        }
+      ],
+
+      "column_filter": {"exclude": ["Adj Close"]}
+    },
+    {
+      "id": "Sink table",
+      "function": "pandas:DataFrame.to_csv",
+      "inputs": ["Source table"],
+      "model": {
+        "path_or_buf": "./examples/example3-out.csv",
+        "index": false
+      }
+    }
+  ]
+}

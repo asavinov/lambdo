@@ -188,7 +188,7 @@ class ColumnsTestCase(unittest.TestCase):
                         "columns": [
                             {
                                 "id": "My Column",
-                                "function": "pandas.core.frame:DataFrame.shift",
+                                "function": "pandas.core.series:Series.shift",
                                 "scope": "all",
                                 "inputs": ["A"],
                                 "outputs": ["next(A)"],

@@ -18,6 +18,10 @@ def transform(func, scope, data, data_type, model, model_type):
     #
     if data_type == 'ndarray':
         data_arg = data.values
+        data_arg.reshape(-1, 1)
+    elif (isinstance(data, pd.DataFrame) and len(data.columns) == 1):
+        #data_arg = data
+        data_arg = data[data.columns[0]]
     else:
         data_arg = data
 

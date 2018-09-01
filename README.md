@@ -40,7 +40,10 @@ Here are some unique distinguishing features of Lambdo:
     * [Training a model](#training-a-model)
 
 * [Examples and analysis templates](#examples-and-analysis-templates)
-  * [Input and output](#input-and-output)
+  * [Example 1: Input and output](#example-1-input-and-output)
+  * [Example 2: Record-based features](#example-2-record-based-features)
+  * [Example 3: User-defined record-based features](#example-3-user-defined-record-based-features)
+  * [Example 4: Table-based features](#example-4-table-based-features)
 
 * [How to install](#how-to-install)
   * [Install from source code](#install-from-source-code)
@@ -163,13 +166,13 @@ For example, if we want to read data then such a table could be defined as follo
 
 ```json
 {
-    "id": "My table",
-    "function": "pandas:read_csv",
-    "inputs": [],
-    "model": {
-        "filepath_or_buffer": "my_file.csv",
-        "nrows": 100
-    }
+  "id": "My table",
+  "function": "pandas:read_csv",
+  "inputs": [],
+  "model": {
+    "filepath_or_buffer": "my_file.csv",
+    "nrows": 100
+  }
 }
 ```
 
@@ -305,19 +308,19 @@ Lambdo will first train a model by using the input data and then use this model 
 
 # Examples and analysis templates
 
-## Input and output
+## Example 1: Input and output
 
 Assume that the data is stored in a CSV file and we want to use this data to produce new features or for data analysis. Loading data is a table population operation which is defined in some table node of the workflow. How the table is populated depends on the `function` of this definition. In our example, we want to re-use a standard `pandas` for loading CSV files. Such a table node is defined as follows:
 
 ```json
 {
-    "id": "Source table",
-    "function": "pandas:read_csv",
-    "inputs": [],
-    "model": {
-        "filepath_or_buffer": "my_file.csv",
-        "nrows": 100
-    }
+  "id": "Source table",
+  "function": "pandas:read_csv",
+  "inputs": [],
+  "model": {
+    "filepath_or_buffer": "my_file.csv",
+    "nrows": 100
+  }
 }
 ```
 
@@ -327,21 +330,29 @@ Data output can also be performed by using a standard `pandas` function:
 
 ```json
 {
-    "id": "Source table",
-    "function": "pandas:DataFrame.to_csv",
-    "inputs": "Source table",
-    "model": {
-      "path_or_buf": "my_output.csv",
-      "index": false
-    }
+  "id": "Source table",
+  "function": "pandas:DataFrame.to_csv",
+  "inputs": "Source table",
+  "model": {
+    "path_or_buf": "my_output.csv",
+    "index": false
+  }
 }
 ```
 
 Note that the `inputs` fields points to the table which needs to be processed. The result of its execution will be a new CSV file.
 
-## Changing data type
+Run this example from command line by executing:
 
-The table definition where we load data has no column definitions. However, we can easily add them. A typical use case is where we want to change the format or data type of some columns. For example, if the source file has a text field with a time stamp then we might want to convert it the `datetime` format which is done by defining a new column:
+```console
+$ lambdo examples/example1.json
+```
+
+Another useful standard function for storing a table is `to_json` with a possible model like `{"path_or_buf": "my_file.json.gz", "orient"="records", "lines"=True, "compression"="gzip"}` (the file will be compressed). To read a JSON file into a table, use the function `read_json`.
+
+## Example 2: Record-based features
+
+The table definition where we load data has no column definitions. However, we can easily add them. A typical use case is where we want to change the format or data type of some columns. For example, if the source file has a text field with a time stamp then we might want to convert it the `datetime` object which is done by defining a new column:
 
 ```json
 {
@@ -353,19 +364,120 @@ The table definition where we load data has no column definitions. However, we c
     },
     "columns": [
       {
-          "id": "Date",
-          "function": "datetime:datetime",
+          "id": "Datetime",
+          "function": "pandas.core.tools.datetimes:to_datetime",
           "scope": "one",
-          "inputs": "Date",
-          "outputs": "Date"
+          "inputs": "Date"
       }
     ]
 }
 ```
 
-The most important parameter in this column definition is `scope`. If it is `one` then the function will be applied to each row of the table. In other words, this function will get *one* row as its first argument.
+The most important parameter in this column definition is `scope`. If it is `one` (or `1`) then the function will be applied to each row of the table. In other words, this function will get *one* row as its first argument. After evaluating this column definition, the table will get a new column `Datetime` storing time stamp objects (which are more convenient for further data transformations). 
 
-After evaluating this column definition, the table will get a column storing time stamp objects (which are more convenient for further data transformations).
+If we do not need the source (string) column then the new column may get the same name `"id": "Date"` and it will overwrite the already existing column. Also, if the source column has a non-standard format then it can be specified in the model `"model": {"format": "%Y-%m-%d"}` which will be passed to the function.
+
+```json
+{
+    "id": "Datetime",
+    "function": "pandas.core.tools.datetimes:to_datetime",
+    "scope": "one",
+    "inputs": "Date",
+    "model": {"format": "%Y-%m-%d"}
+}
+```
+
+If some source or intermediate columns are not needed for later analysis then they can be excluded by adding a column filter to the table definition where we can specify columns to retain as a list like `"column_filter": ["Open", "High", "Low", "Close", "Volume"]` or to exclude like `"column_filter": {"exclude": ["Adj Close"]}`.
+
+Execute this workflow as follows:
+
+```console
+$ lambdo examples/example2.json
+```
+
+## Example 3: User-defined record-based features
+
+Let us now assume that we want to analyze the difference between high and low daily prices and hence we need to derive such a column from two input columns `High` and `Low`. There is no such a standard function and hence we need to define our own domain-specific function which will return the derived value given some input values. This user-defined function is defined in a Python source file:
+
+```python
+def diff_fn(X):
+    """
+    Difference between first and second fields of the input Series.
+    """
+    if len(X) < 2: return None
+    if not X[0] or not X[1]: return None
+    if pd.isna(X[0]) or pd.isna(X[1]): return None
+    return X[0] - X[1]
+```
+
+This function will get a Series object for each row of the input table. For each pair of numbers it will return their difference.
+
+In order for the workflow to load this function definition we need to specify its location in the workflow:
+
+```json
+{
+  "id": "Example 3",
+  "imports": ["examples.example3"],
+}
+```
+
+The column definition which uses this function is defined as follows:
+
+```json
+{
+  "id": "diff_high_low",
+  "function": "examples.example3:diff_fn",
+  "inputs": ["High", "Low"]
+}
+```
+
+We specified two columns which have to be passed as parameters to the user-defined functions: `"inputs": ["High", "Low"]`. The same function could be also applied to other column where we want to find difference. This function will be called for each row of the table and its return values will be stored in the new column.
+
+Each function including this one can accept additional arguments via its `model` (similar to how we passed data format in the previous example).
+
+## Example 4: Table-based features
+
+A record-based function with scope 1 will be applied to each row of the table and get this row fields in arguments. There will be as many calls as there are rows in the table. If `scope` is equal to `all` then the function will be called only one time and it will get all rows it has to process. Earlier, we described how string dates can be convereted to datetime object by applying the transformation function to each row. The same result can be obtained if we pass the whole column to the transformation function. The only field that has to be changed in this definition is `scope` which is now equals `all`:
+
+```json
+{
+  "id": "Datetime",
+  "function": "pandas.core.tools.datetimes:to_datetime",
+  "scope": "all",
+  "inputs": "Date",
+  "model": {"format": "%Y-%m-%d"}
+}
+```
+
+The result will be the same but this column will be evaluated faster.
+
+Such functions which get all rows have to know how to iterate over the rows and they return one column rather than a single value. Such functions can apply any kind of computations because they have the whole data set. Therefore, such functions are used for more complex transformations including forecasts using some model.
+
+Another example of applying a function to all rows is shifting a column. For example, if our goal is forecasting the closing price tomorrow then we need shift this column one step backwards:
+
+```json
+{
+  "id": "Close_Tomorrow",
+  "function": "pandas.core.series:Series.shift",
+  "scope": "all",
+  "inputs": ["Close"],
+  "model": {"periods": -1}
+}
+```
+
+Values of this new column will be equal to the value of the specified input column taken from the next record.
+
+## Example 5: Window-based rolling aggregation
+
+TBD
+
+## Example 6: Training a model
+
+TBD
+
+## Example 7: Training a data mining model
+
+TBD
 
 # How to install
 

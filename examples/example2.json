@@ -1,5 +1,5 @@
 {
-  "id": "Example 1",
+  "id": "Example 2",
   "tables": [
     {
       "id": "Source table",
@@ -8,14 +8,25 @@
       "model": {
         "filepath_or_buffer": "./examples/^GSPC.csv",
         "nrows": 1000
-      }
+      },
+      "columns": [
+        {
+          "id": "Date",
+          "function": "pandas.core.tools.datetimes:to_datetime",
+          "scope": "one",
+          "inputs": "Date",
+          "model": {"format": "%Y-%m-%d"}
+        }
+      ],
+
+      "column_filter": {"exclude": ["Adj Close"]}
     },
     {
       "id": "Sink table",
       "function": "pandas:DataFrame.to_csv",
       "inputs": ["Source table"],
       "model": {
-        "path_or_buf": "./examples/example1-out.csv",
+        "path_or_buf": "./examples/example2-out.csv",
         "index": false
       }
     }
