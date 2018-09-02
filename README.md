@@ -412,7 +412,7 @@ def diff_fn(X):
 
 This function will get a Series object for each row of the input table. For each pair of numbers it will return their difference.
 
-In order for the workflow to load this function definition we need to specify its location in the workflow:
+In order for the workflow to load this function definition, we need to specify its location in the workflow:
 
 ```json
 {
@@ -421,7 +421,7 @@ In order for the workflow to load this function definition we need to specify it
 }
 ```
 
-The column definition which uses this function is defined as follows:
+The column definition, which uses this function is defined as follows:
 
 ```json
 {
@@ -437,7 +437,7 @@ Each function including this one can accept additional arguments via its `model`
 
 ## Example 4: Table-based features
 
-A record-based function with scope 1 will be applied to each row of the table and get this row fields in arguments. There will be as many calls as there are rows in the table. If `scope` is equal to `all` then the function will be called only one time and it will get all rows it has to process. Earlier, we described how string dates can be convereted to datetime object by applying the transformation function to each row. The same result can be obtained if we pass the whole column to the transformation function. The only field that has to be changed in this definition is `scope` which is now equals `all`:
+A record-based function with scope 1 will be applied to each row of the table and get this row fields in arguments. There will be as many calls as there are rows in the table. If `scope` is equal to `all` then the function will be called only one time and it will get all rows it has to process. Earlier, we described how string dates can be converted to datetime object by applying the transformation function to each row. The same result can be obtained if we pass the whole column to the transformation function. The only field that has to be changed in this definition is `scope`, which is now equals `all`:
 
 ```json
 {
@@ -469,13 +469,111 @@ Values of this new column will be equal to the value of the specified input colu
 
 ## Example 5: Window-based rolling aggregation
 
-TBD
+Lambdo is focused on time series analysis where important pieces of behavior (features) are hidden in sequences of events. Therefore, one of the main goals of feature engineering is making such features explicitly as attribute values by extracting data from the history. Normally it is done by using rolling aggregation where a function is applied to some historic window of recent events and returns one value, which characterizes the behavior. In Lambdo, it is possible to specify an arbitrary (Python) function, which encodes some domain-specific logic specific for this feature.
+
+For window-based columns, the most important parameter is `scope` which is an integer specifying the number of events to be passed to the function as its first argument. For example, if `"scope": 10` then the Python function will always get 10 elements of the time series: this element and 9 previous elements. It can be a series of 10 values or a sub-table with 10 rows depending on other parameters. The function then analyzes these 10 events and returns one single value, which is stored as a value of this derived column.
+
+Assume that we want to find running average volume for 10 days. This can be done as follows:
+
+```json
+{
+  "id": "mean_Volume",
+  "function": "numpy.core.fromnumeric:mean",
+  "scope": 10,
+  "inputs": ["Volume"]
+}
+```
+
+Each value of the derived column `mean_Volume` will store average volume for the last 10 days. 
+
+Note that instead of `mean` we could use arbitrary Python function including user-defined functions. Such a function will be called for each row in the table and it will get 10 values of the volume for the last 10 days (including this one). For example, we could write a function which counts the number of peaks (local maximums) in volume or we could find some more complex pattern. Also, if `inputs` has more columns then the functions will get a data frame as input with the columns specified in `inputs`.
+
+Typically in time series analysis we use several running aggregations with different window sizes. Such columns can can be defined independently but their definitions will differ only in one parameter: `scope`. In order to simplify such definitions Lambdo allows for defining a base definition and extensions. For example, if we want to define average volumes with windows 10, 5 and 2 then this can be done by definition scopes in the extensions:
+
+```json
+{
+  "id": "mean_Volume",
+  "function": "numpy.core.fromnumeric:mean",
+  "inputs": ["Volume"],
+  "extensions": [
+    {"scope": "10"},
+    {"scope": "5"},
+    {"scope": "2"}
+  ]
+}
+```
+
+The number of columns defined is equal to the number of extensions, that is, three columns in this examples. The names of the columns by default will be `id` of this family definition and the suffix `_N` where `N` is an index of the extension. In our example, three columns will be added after evaluating this definition: `mean_Volume_0`, `mean_Volume_1` and `mean_Volume_2`.
+
+Moving averages can produce empty values, which we want to exclude from analysis, for example, because other analysis algorithms are not able to process them. Each table definition allows for filtering its records at the end before the table data is passed to the next node. In order to exclude all rows with empty values we add this block to the end of the table definition:
+
+```json
+"row_filter": {"dropna": true}
+```
+
+Run this example and check out its result which will contain three new columns with moving averages of the volume:
+
+```console
+$ lambdo examples/example5.json
+```
 
 ## Example 6: Training a model
 
-TBD
+All previous examples assumed that a column definition is treated as a data transformation performed via a Python function which also takes parameters of this transformation, which is called a model. The model describes how specifically the transformation has to be performed. One of the main features of Lambdo is that it treats such transformations as applying a data mining model. In other words, the result of applying a data mining model is a new column. For example, this column could store the cluster number this row belongs to or likelihood this object (row) is some object. What is specific to data mining is that its models are not specified explicitly but rather are trained from the data. This possibility to train a model (as opposed to providing an explicit model) is provided by Lambdo for any kind of column definition. If a model is absent and the training function is provided, then the model will be trained before it is applied to the data.
 
-## Example 7: Training a data mining model
+How a model has to be train is specified in a workflow using the `train` block of a column definition:
+
+```json
+"columns": [
+  {
+    "id": "My Column",
+    "function": "my_transform_function",
+
+    "train": {
+      "function": "my_train_function",
+      "model": {"hyper_param": 123}
+    }
+  }
+]
+```
+
+This column definition does not have a model specified but it does specify a function for generating (training) such a model. It also provides a hyper-model for this training function which specifies how to do training. The training function gets the data and the hyper-model in its arguments and returns a trained model which is then used for generating the column data.
+
+Here is an example of a column definition which trains and applies a gradient boosting data mining model:
+
+```json
+{
+  "id": "Close_Tomorrow_Predict",
+  "function": "examples.example6:gb_predict",
+  "scope": "all",
+  "data_type": "ndarray",
+  "inputs": {"exclude": ["Date", "Close_Tomorrow"]},
+  "train": {
+    "function": "examples.example6:gb_fit",
+    "row_filter": {"slice": {"end": 900}},
+    "model": {"n_estimators": 500, "max_depth": 4, "min_samples_split": 2, "learning_rate": 0.01, "loss": "ls"},
+    "outputs": ["Close_Tomorrow"]
+  }
+}
+```
+
+This definition has the following new elements:
+
+* `data_type` field indicates that the functions accepts `ndarray` and not `DataFrame`.
+* `inputs` field allows us to select columns we want to use. We want to exclude the `Date` column because its data type is not supported and `Close_Tomorrow` column which is a goal
+* `row_filter` is used to limit the number of records for training
+* `model` in the training section provides hyper-parameters for the training function
+* `outputs` field specifies labels for the training procedure
+
+Thus in this definition we want to use 900 records and all columns except for `Date` for training by using `Close_Tomorrow` as labels. The resulted model is then applied to *all* the data and the predictions are stored as the `Close_Tomorrow_Predict` column.
+
+Run this example and check out its results in the last column with predictions:
+
+```console
+$ lambdo examples/example6.json
+```
+
+## Example 7: Reading and writing models
 
 TBD
 
@@ -485,40 +583,43 @@ TBD
 
 Check out the source code and execute this command in the project directory (where `setup.py` is located):
 
-```
+```console
 $ pip install .
 ```
 
 Or alternatively:
 
-```
-python setup.py install
+```console
+$ python setup.py install
 ```
 
 ## Install from package
 
 Create wheel package:
-```
+
+```console
 $ python setup.py bdist_wheel
 ```
+
 The `whl` package will be stored in the `dist` folder and can then be installed using `pip`.
 
 Execute this command by specifying the `whl` file as a parameter:
-```
-pip install dist\lambdo-0.1.0-py3-none-any.whl
+
+```console
+$ pip install dist\lambdo-0.1.0-py3-none-any.whl
 ```
 
 # How to test
 
 Run tests:
 
-```
+```console
 $ python -m unittest discover -s ./tests
 ```
 
 or
 
-```
+```console
 $ python setup.py test
 ```
 
@@ -528,7 +629,7 @@ If you execute `lambdo` without any options then it will return a short help by 
 
 A workflow file is needed to analyze data. Very simple workflows for test purposes can be found in the `tests` directory. More complex workflows can be found in the `examples` directory. To execute a workflow start `lambdo` with this workflow file name as a parameter:
 
-```
+```console
 $ lambdo examples/example1.json
 ```
 

@@ -1,0 +1,87 @@
+{
+  "id": "Example 6",
+
+  "imports": ["examples.example6"],
+
+  "tables": [
+    {
+      "id": "Source table",
+      "function": "pandas:read_csv",
+      "inputs": [],
+      "model": {
+        "filepath_or_buffer": "./examples/^GSPC.csv",
+        "nrows": 1000
+      },
+
+      "columns": [
+        {
+          "id": "Date",
+          "function": "pandas.core.tools.datetimes:to_datetime",
+          "scope": "all",
+          "inputs": "Date",
+          "model": {"format": "%Y-%m-%d"}
+        },
+        {
+          "id": "diff_high_low",
+          "function": "examples.example3:diff_fn",
+          "inputs": ["High", "Low"]
+        },
+        {
+          "id": "Close_Tomorrow",
+          "function": "pandas.core.series:Series.shift",
+          "scope": "all",
+          "inputs": ["Close"],
+          "model": {"periods": -1}
+        }
+      ],
+
+      "column_filter": {"exclude": ["Adj Close"]}
+    },
+    {
+      "id": "Moving averages",
+
+      "columns": [
+        {
+          "id": "mean_Volume",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["Volume"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        }
+      ],
+
+      "row_filter": {"dropna": true}
+    },
+    {
+      "id": "Train and Apply",
+
+      "columns": [
+        {
+          "id": "Close_Tomorrow_Predict",
+          "function": "examples.example6:gb_predict",
+          "scope": "all",
+          "data_type": "ndarray",
+          "inputs": {"exclude": ["Date", "Close_Tomorrow"]},
+          "train": {
+            "function": "examples.example6:gb_fit",
+            "row_filter": {"slice": {"end": 900}},
+            "model": {"n_estimators": 500, "max_depth": 4, "min_samples_split": 2, "learning_rate": 0.01, "loss": "ls"},
+            "outputs": ["Close_Tomorrow"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "Sink table",
+      "function": "pandas:DataFrame.to_csv",
+      "inputs": ["Train and Apply"],
+      "model": {
+        "path_or_buf": "./examples/example6-out.csv",
+        "index": false
+      }
+    }
+  ]
+}

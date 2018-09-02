@@ -1,0 +1,189 @@
+{
+  "id": "Example N",
+  "imports": ["examples.example10"],
+  "tables": [
+    {
+      "id": "Source table",
+      "function": "pandas:read_csv",
+      "inputs": [],
+      "model": {
+        "filepath_or_buffer": "./examples/^GSPC.csv",
+        "nrows": 1000
+      },
+
+      "column_filter": {"exclude": ["Date"]}
+    },
+    {
+      "id": "Volume Weighted Average Price - VWAP",
+
+      "columns": [
+        {
+          "id": "product_CloseVolume",
+          "function": "examples.example10:multiply_fn",
+          "inputs": ["Adj Close","Volume"]
+        },
+        {
+          "id": "sum_Volume",
+          "function": "numpy.core.fromnumeric:sum",
+          "inputs": ["Volume"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "sum_product_CloseVolume",
+          "function": "numpy.core.fromnumeric:sum",
+          "inputs": ["product_CloseVolume"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "vwap_Close",
+          "function": "examples.example10:divide_fn",
+          "extensions": [
+            {"inputs": ["sum_product_CloseVolume_0", "sum_Volume_0"]},
+            {"inputs": ["sum_product_CloseVolume_1", "sum_Volume_1"]},
+            {"inputs": ["sum_product_CloseVolume_2", "sum_Volume_2"]}
+          ]
+        }
+      ],
+
+      "column_filter": {"exclude": [
+        "product_CloseVolume",
+        "sum_Volume_0", "sum_Volume_1", "sum_Volume_2",
+        "sum_product_CloseVolume_0", "sum_product_CloseVolume_1", "sum_product_CloseVolume_2"
+      ]}
+    },
+    {
+      "id": "Derived columns",
+
+      "columns": [
+        {
+          "id": "mean_Volume",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["Volume"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "mean_Close",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["Adj Close"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "diff_vwap_Close",
+          "function": "examples.example10:diff_fn",
+          "extensions": [
+            {"inputs": ["vwap_Close_0", "mean_Close_0"]},
+            {"inputs": ["vwap_Close_0", "mean_Close_1"]},
+            {"inputs": ["vwap_Close_0", "mean_Close_2"]}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Moving differences",
+
+      "columns": [
+        {
+          "id": "diff_high_low",
+          "function": "examples.example10:diff_fn",
+          "inputs": ["High", "Low"]
+        },
+        {
+          "id": "diff_close_open",
+          "function": "examples.example10:diff_fn",
+          "inputs": ["Close", "Open"]
+        },
+        {
+          "id": "mean_Diff_high_low",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["diff_high_low"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        },
+        {
+          "id": "mean_Diff_close_open",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["diff_high_low"],
+          "extensions": [
+            {"scope": "10"},
+            {"scope": "5"},
+            {"scope": "2"}
+          ]
+        }
+      ],
+
+      "column_filter": {"exclude": ["Close"]}
+    },
+    {
+      "id": "Analytic features",
+
+      "columns": [
+        {
+          "id": "trend_Close",
+          "function": "examples.example10:linear_trend_fn",
+          "inputs": ["Adj Close"],
+          "extensions": [
+            {"scope": "20"},
+            {"scope": "10"},
+            {"scope": "5"}
+          ]
+        },
+        {
+          "id": "Goal",
+          "function": "pandas.core.series:Series.shift",
+          "scope": "all",
+          "inputs": ["Adj Close"],
+          "model": {"periods": -1}
+        }
+      ],
+
+      "row_filter": {"dropna": true}
+    },
+    {
+      "id": "Prediction",
+
+      "columns": [
+        {
+          "id": "Predict_Goal",
+          "function": "examples.example10:gb_predict",
+          "scope": "all",
+          "inputs": {"exclude": ["Goal"]},
+          "model": "$file:_example10_model_.pkl",
+          "train": {
+            "function": "examples.example10:gb_fit",
+            "row_filter": {"slice": {"end": 900}},
+            "model": {"n_estimators": 500, "max_depth": 4, "min_samples_split": 2, "learning_rate": 0.01, "loss": "ls"},
+            "outputs": ["Goal"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "Sink table",
+      "function": "pandas:DataFrame.to_csv",
+      "inputs": ["Analytic features"],
+      "model": {
+        "path_or_buf": "./examples/example10-out.csv",
+        "index": false
+      }
+    }
+  ]
+}
