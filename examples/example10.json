@@ -166,7 +166,7 @@
           "function": "examples.example10:gb_predict",
           "scope": "all",
           "inputs": {"exclude": ["Goal"]},
-          "model": "$file:_example10_model_.pkl",
+          "model": "$file:example10_model_.pkl",
           "train": {
             "function": "examples.example10:gb_fit",
             "row_filter": {"slice": {"end": 900}},

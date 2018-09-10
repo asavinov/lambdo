@@ -575,6 +575,22 @@ $ lambdo examples/example6.json
 
 ## Example 7: Reading and writing models
 
+If a column (feature definition) model is not specified then Lambdo will try to generate it by using the train function. This trained model will be then applied to the input data. However, after finishing executing the workflow, this model will be lost. In many scenarios we would like to retain some trained models. In particular, it is necessary if we explicitly separate two phases: training and predicting. The goal of the training phase is to generate a prediction model by using some (typically large amount of) input data. The model resulted from the training phase can be then used for prediction (by this same workflow because we want to have the same features). Therefore, we do not want to train it again but rather load it from the location where it was stored during training.
+
+The mechanism of storing and loading models is implemented by Lambdo as one of its main features. The idea is that workflow field values can specified either by-value or by-reference. Specifying a value by-value means that we simply provide a JSON object for the corresponding JSON field. However, we can also point to values by providing a reference which will be used by the system for reading or writing it.
+
+The general rule is that if a JSON field value is a string which starts from `$` sign then it is a reference. If we want to store some model in a file (and not directly in the workflow) then the location is specified as follows:
+
+```json
+"model": "$file:my_model.pkl"
+```
+
+Now Lambdo will try to load this model from the file. If it succeeds then the model will be used for transformation (no training needed). If it fails, for example, the file does not exist, then Lambdo will generate this model by using the training function, store the model in the file and then use it for generating the column as usual.
+
+Example 7 has one small modification with respect to Example 6: its trained model is stored in a file. As a result, we can apply this workflow to a large data set for training, and then this same workflow with the present model can be applied to smaller data sets for prediction.
+
+## Example 8: Joining input tables
+
 TBD
 
 # How to install
