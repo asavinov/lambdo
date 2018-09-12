@@ -13,7 +13,7 @@ Here are some unique distinguishing features of Lambdo:
 * **No difference between features and models.** Lambdo unifies feature engineering and machine learning so that a workflow involves many feature definitions and many machine learning algorithms. It is especially important for deep learning where abstract intermediate features have to be learned.
 * **One workflow for both prediction and training.** Lambdo nodes combine applying a transformation with training its model so that nodes of a workflow can be re-trained when required. This also guarantees that the same features will be used for both learning phase and prediction phase.
 * **Columns first.**] Lambdo workflow use column operations along with table operations which makes many operations much simpler.
-* **User-defined functions for extensibility.** Lambdo relies on user-defined functions which can be as simple as format conversion and as complex as deep learning networks.
+* **User-defined functions for extensibility.** Lambdo relies on user-defined functions which can be as simple as format conversion and as complex as deep neural networks.
 * **Analysis of time-series and forecasting made easy.** Lambdo makes time series analysis much simpler by providing many using mechanisms like column families (for example, several moving averages with different window sizes), window-awareness (generation of windows is a built-in function), pre-defined functions for extracting goals.
 * **As flexible as programming and as easy as IDE.** Lambdo is positioned between (Python) programming and interactive environments (like KNIME)
 
@@ -44,6 +44,10 @@ Here are some unique distinguishing features of Lambdo:
   * [Example 2: Record-based features](#example-2-record-based-features)
   * [Example 3: User-defined record-based features](#example-3-user-defined-record-based-features)
   * [Example 4: Table-based features](#example-4-table-based-features)
+  * [Example 5: Window-based rolling aggregation](#example-5-window-based-rolling-aggregation)
+  * [Example 6: Training a model](#example-6-training-a-model)
+  * [Example 7: Reading and writing models](#example-7-reading-and-writing-models)
+  * [Example 8: Joining input tables](#example-8-joining-input-tables)
 
 * [How to install](#how-to-install)
   * [Install from source code](#install-from-source-code)
@@ -591,7 +595,22 @@ Example 7 has one small modification with respect to Example 6: its trained mode
 
 ## Example 8: Joining input tables
 
-TBD
+Frequently it is necessary to load data from many different data sources and merge them into one table the columns of which can be then used for generating features and analysis. Lambdo provides a standard table function `lambdo.std:join`  which populates a new table by joining data from a list of input tables. For example, assume that we want to analyze daily quotes for some symbol but in addition we want to load another quote data for the same days. The two input tables are specified in the `input` field. The first table `GSPC` in this list is treated as a main table while the second table `VIX` is attached to it:
+
+```json
+{
+  "id": "Merged Table",
+  "function": "lambdo.std:join",
+  "inputs": ["GSPC", "VIX"],
+  "model": {"suffixes": ["", "_VIX"]},
+}
+```
+
+This new table will contain as many records as the first table contains but in addition to its columns it will have also columns from the second table. The model of the join function allows for specifying suffixes for columns.
+
+The `join` function by default join using the row numbers. If it is necessary to join by using columns then they can be specified in the `keys` field of the table model as a list of column names.
+
+Example 8 demonstrate how to load quotes from two different files and then predict closing price of one symbol taking into account the data for the second symbol.
 
 # How to install
 

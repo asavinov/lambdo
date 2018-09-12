@@ -24,7 +24,7 @@ def join(dfs, **model):
     left_index = not left_on
     right_ons = keys[1:]
 
-    # - Suffixes used for new column names
+    # Suffixes used for new column names
     suffixes = model.get('suffixes', [])
     main_suffix = suffixes[0] if len(suffixes) > 0 else None
     right_suffixes = suffixes[1:]
