@@ -52,6 +52,24 @@ def join(dfs, **model):
     # Return merged table
     return main_df
 
+def mean_weighted(df, **model):
+    '''Find mean value of the first column weighted by the values in the second column.
+    In the case all weights are equal, the result is mean value of the first column.
+    '''
+    if df is None or len(df) == 0:
+        return None
+
+    sum_weights = df.iloc[:,1].sum()
+
+    # Use dot product of two columns
+    sum_products = df.iloc[:,0].dot(df.iloc[:,1])
+
+    # Alternative:
+    #product = df.iloc[:,0] * df.iloc[:,1]
+    #sum_products = product.sum()
+
+    return sum_products / sum_weights
+
 
 if __name__ == "__main__":
     pass

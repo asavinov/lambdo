@@ -212,6 +212,45 @@ class ColumnsTestCase(unittest.TestCase):
         self.assertAlmostEqual(tb.data['next(A)'][1], 3.0)
         self.assertTrue(pd.isna(tb.data['next(A)'][2]))
 
+    def test_single_columns(self):
+
+        #
+        # Weighted rolling mean
+        #
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "My table",
+                    "columns": [
+                        {
+                            "id": "mean_w(A)",
+                            "function": "lambdo.std:mean_weighted",
+                            "scope": "2",
+                            "inputs": ["A","W"],
+                            "model": {}
+                        }
+                    ]
+                }
+            ]
+        }
+        wf = Workflow(wf_json)
+
+        # Provide data directly (without table population)
+        data = {'A': [1, 2, 3], 'W': [3, 2, 1]}
+        df = pd.DataFrame(data)
+        tb = wf.tables[0]
+        tb.data = df
+
+        tb.execute()
+
+        v0 = tb.data['mean_w(A)'][0]
+        v1 = tb.data['mean_w(A)'][1]
+        v2 = tb.data['mean_w(A)'][2]
+
+        self.assertTrue(pd.isna(v0))
+        self.assertAlmostEqual(v1, 1.4)
+        self.assertAlmostEqual(v2, 2.33333333)
 
 if __name__ == '__main__':
     unittest.main()
