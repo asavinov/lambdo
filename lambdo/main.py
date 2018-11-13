@@ -5,6 +5,7 @@ import sys
 import argparse
 
 import json
+import re
 
 from lambdo.Workflow import *
 from lambdo.version import *
@@ -16,7 +17,12 @@ log = logging.getLogger('MAIN')
 def run(workflow_file):
 
     with open(workflow_file, encoding='utf-8') as f:
-        wf_json = json.loads(f.read())
+        wf_str = f.read()
+
+        # Remove everything starting with // till the end of line
+        wf_str = re.sub(r"//.*$", "", wf_str, flags=re.M)
+
+        wf_json = json.loads(wf_str)
     wf = Workflow(wf_json)
     wf.execute()
 
