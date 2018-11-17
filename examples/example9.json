@@ -1,0 +1,220 @@
+{
+  "id": "Example 9",
+  "imports": ["examples.example9"],
+  "tables": [
+
+    {
+      //
+      // Load first table
+      //
+      "id": "GSPC",
+      "function": "pandas:read_csv",
+      "inputs": [],
+      "model": {"filepath_or_buffer": "./examples/^GSPC.csv", "nrows": 6900},
+
+      "columns": [
+        {
+          // Average of open, high, low, close
+          "id": "Price",
+          "function": "examples.example9:price_fn",
+          "inputs": ["Open","High","Low","Close"]
+        },
+        {
+          // Volume weighted average price
+          "id": "Price",
+          "function": "lambdo.std:mean_weighted",
+          "scope": "2",
+          "inputs": ["Price","Volume"]
+        },
+
+        {
+          // Several moving average prices with different window sizes
+          "id": "mean_Price",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["Price"],
+          "extensions": [
+            {"scope": "20"},
+            {"scope": "10"},
+            {"scope": "5"}
+          ]
+        },
+        {
+          // Several moving trends computed as a slope of the linear regression for the window
+          "id": "trend_Price",
+          "function": "examples.example9:linear_trend_fn",
+          "inputs": ["Price"],
+          "extensions": [
+            {"scope": "20"},
+            {"scope": "10"},
+            {"scope": "5"}
+          ]
+        }
+      ],
+
+      // Exclude unnecessary columns which have been used to derive new features
+      "column_filter": {"exclude": ["Date","Open","Low","Adj Close","Volume"]}
+    },
+
+    {
+      //
+      // Load second table
+      //
+      "id": "VIX",
+      "function": "pandas:read_csv",
+      "inputs": [],
+      "model": {"filepath_or_buffer": "./examples/^VIX.csv", "nrows": 6900},
+
+      "columns": [
+        {
+          // Average of open, high, low, close
+          "id": "Price",
+          "function": "examples.example9:price_fn",
+          "inputs": ["Open","High","Low","Close"]
+        },
+
+        {
+          // Several moving average prices with different window sizes
+          "id": "mean_Price",
+          "function": "numpy.core.fromnumeric:mean",
+          "inputs": ["Price"],
+          "extensions": [
+            {"scope": "20"},
+            {"scope": "10"},
+            {"scope": "5"}
+          ]
+        },
+        {
+          // Several moving trends computed as a slope of the linear regression for the window
+          "id": "trend_Price",
+          "function": "examples.example9:linear_trend_fn",
+          "inputs": ["Price"],
+          "extensions": [
+            {"scope": "20"},
+            {"scope": "10"},
+            {"scope": "5"}
+          ]
+        }
+      ],
+
+      // Exclude unnecessary columns which have been used to derive new features
+      "column_filter": {"exclude": ["Date","Open","Low","Adj Close","Volume"]}
+    },
+
+    {
+      //
+      // Merge two tables
+      //
+      "id": "Merged Table",
+      "function": "lambdo.std:join",
+      "inputs": ["GSPC", "VIX"],
+      "model": {"suffixes": ["", "_vix"]},
+
+      "columns": [
+        {
+          // Maximum for some past time interval
+          "id": "max_Price",
+          "function": "numpy.core.fromnumeric:amax",
+          "inputs": ["High"],
+          "scope": "10"
+        },
+        {
+          // Maximum for the future time interval (important: now must be excluded)
+          "id": "max_Price_future",
+          "function": "pandas.core.series:Series.shift",
+          "scope": "all",
+          "inputs": ["max_Price"],
+          "model": {"periods": -10}
+        },
+        {
+          // Relative maximum for the future (realtive to now)
+          "id": "max_Price_future",
+          "function": "examples.example9:rel_diff_fn",
+          "scope": "one",
+          "inputs": ["max_Price_future","Close"]
+        },
+        {
+          "id": "high_growth",
+          "function": "examples.example9:ge_fn",
+          "scope": "one",
+          "inputs": ["max_Price_future"],
+          "model": {"threshold": 2.5} // Return 1 if max price is 2.5% higher than the close price
+        }
+      ],
+
+      "column_filter": {"exclude": ["High","Close","max_Price"]},
+
+      "row_filter": {"dropna": true}
+    },
+
+    {
+      //
+      // Make prediction
+      //
+      "id": "Prediction",
+
+      "columns": [
+        {
+          "id": "high_growth_lr",
+          "function": "examples.example9:c_predict",
+          "scope": "all",
+          "inputs": {"exclude": ["max_Price_future", "high_growth"]},
+          "model": "$file:example9_model_lr.pkl",  // Read and use model from this file
+          "train": {  // If file with model is not available then train the model
+
+            "row_filter": {"slice": {"end": 6000}},  // Use only part of the data set for training
+
+            "function": "examples.example9:lr_fit",
+            "model": {},
+
+            "outputs": ["high_growth"]  // Goal variable for training (labels)
+          }
+        },
+        {
+          "id": "high_growth_gb",
+          "function": "examples.example9:c_predict",
+          "scope": "all",
+          "inputs": {"exclude": ["max_Price_future", "high_growth", "high_growth_lr"]},
+          "model": "$file:example9_model_gb.pkl",  // Read and use model from this file
+          "train": {  // If file with model is not available then train the model
+
+            "row_filter": {"slice": {"end": 6000}},  // Use only part of the data set for training
+
+            "function": "examples.example9:gb_fit",
+            "model": {"n_estimators": 500, "max_depth": 4, "min_samples_split": 2, "learning_rate": 0.01},
+
+            "outputs": ["high_growth"]  // Goal variable for training (labels)
+          }
+        },
+        {
+          "id": "high_growth_rf",
+          "function": "examples.example9:c_predict",
+          "scope": "all",
+          "inputs": {"exclude": ["max_Price_future", "high_growth", "high_growth_lr", "high_growth_gb"]},
+          "model": "$file:example9_model_rf.pkl",  // Read and use model from this file
+          "train": {  // If file with model is not available then train the model
+
+            "row_filter": {"slice": {"end": 6000}},  // Use only part of the data set for training
+
+            "function": "examples.example9:rf_fit",
+            "model": {"n_estimators": 70, "oob_score": true, "n_jobs": -1, "random_state": 101, "max_features": null, "min_samples_leaf": 30},
+
+            "outputs": ["high_growth"]  // Goal variable for training (labels)
+          }
+        }
+      ]
+    },
+
+    {
+      //
+      // Write the result
+      //
+      "id": "Sink table",
+      "function": "pandas:DataFrame.to_csv",
+      "inputs": ["Prediction"],
+      "model": {
+        "path_or_buf": "./examples/example9-out.csv",
+        "index": false
+      }
+    }
+  ]
+}

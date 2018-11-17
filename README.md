@@ -612,6 +612,14 @@ The `join` function by default join using the row numbers. If it is necessary to
 
 Example 8 demonstrate how to load quotes from two different files and then predict closing price of one symbol taking into account the data for the second symbol.
 
+## Example 9: Train and apply
+
+In the previous examples, we trained models with the only purpose: generate new features. Therefore, the new (feature) models were applied to the same data that was used for training. It is a scenario of pure feature engineering where the main result is a data new data set, which is supposed to be analyzed by some other data mining algorithm by some other framework (including a separate lambdo workflow).
+
+In this example, we show how we can generate features and also train a final data mining model, which is applied to previously unseen data. This workflow combines the steps for generating new features (possibly by training feature models), training a final data mining model, and applying this model to some portion of data which has not been used for training. This workflow can be used for validating various scenarios or for tuning various parameters of the workflow.
+
+We want to predict a price but simply using future price as a goal is a somewhat naive approach. We demonstrate a more realistic scenario where the goal is to determine whether the price will be higher than some threshold during some interval in future (both threshold and the future interval are parameters). For example, we might be interested to determine whether the price will be 2% higher during next 20 days (at least once). To derive such a target variable we first compute a column with maximum price for the previous 20 days, and then shift this column so that it essentially represent maximum price for the next 20 days:
+
 # How to install
 
 ## Install from source code
