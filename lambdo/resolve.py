@@ -77,12 +77,36 @@ def resolve_name_in_mod(func_name: str, mod):
 
 def import_modules(imports):
     modules = []
+
     for mod_name in imports:
+        mod = None
         try:
-            mod = importlib.import_module(mod_name)
-            modules.append(mod)
+            pass
+            #mod = importlib.import_module(mod_name)
         except ImportError as ie:
-            log.warning("Cannot import module '{0}'. Ignored. This can cause errors later if its functions are used in the workflow".format(mod_name))
+            pass
+
+        if mod:
+            modules.append(mod)
+            continue  # Module found and imported
+
+        # Try to import from source file
+        # See: https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+        try:
+            file_path = mod_name.replace('.', '/')
+            file_path = file_path + '.py'
+            spec = importlib.util.spec_from_file_location(mod_name, file_path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+        except ImportError as ie:
+            pass
+
+        if mod:
+            modules.append(mod)
+            sys.modules[mod_name] = mod
+            continue
+
+        log.warning("Cannot import module '{0}'. Ignored. This can cause errors later if its functions are used in the workflow".format(mod_name))
 
     return modules
 
