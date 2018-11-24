@@ -614,11 +614,43 @@ Example 8 demonstrate how to load quotes from two different files and then predi
 
 ## Example 9: Train and apply
 
-In the previous examples, we trained models with the only purpose: generate new features. Therefore, the new (feature) models were applied to the same data that was used for training. It is a scenario of pure feature engineering where the main result is a data new data set, which is supposed to be analyzed by some other data mining algorithm by some other framework (including a separate lambdo workflow).
+In the previous examples, we trained models with the only purpose: generate new features. Therefore, the new (feature) models were applied to the *same* data that was used for training. It is a scenario of pure feature engineering where the main result is a new data set, which is supposed to be analyzed by some other data mining algorithm within some other framework (including a separate Lambdo workflow).
 
-In this example, we show how we can generate features and also train a final data mining model, which is applied to previously unseen data. This workflow combines the steps for generating new features (possibly by training feature models), training a final data mining model, and applying this model to some portion of data which has not been used for training. This workflow can be used for validating various scenarios or for tuning various parameters of the workflow.
+In this example, we show how we can generate features and also train a final data mining model, which is applied to previously unseen data. This workflow combines the steps for generating new features (possibly by training feature models), training a final data mining model, and applying this model to some portion of data which has not been used for training (but which was transformed using the same features). This workflow can be used for validating various scenarios or for tuning various parameters of the workflow.
 
-We want to predict a price but simply using future price as a goal is a somewhat naive approach. We demonstrate a more realistic scenario where the goal is to determine whether the price will be higher than some threshold during some interval in future (both threshold and the future interval are parameters). For example, we might be interested to determine whether the price will be 2% higher during next 20 days (at least once). To derive such a target variable we first compute a column with maximum price for the previous 20 days, and then shift this column so that it essentially represent maximum price for the next 20 days:
+The general goal is to predict the price. But simply using future (numeric) prices is a somewhat naive approach. We implement a more realistic scenario where the goal is to determine whether the price will exceed a threshold during some future interval (both the threshold and the length of the interval are parameters). For example, we might be interested to determine whether the price will be 2% higher (at least once) during next 10 days. Such a derived goal column has to store 1 if the price exceeds the threshold and 0 otherwise.
+
+Deriving such a column is performed by performing the following steps:
+
+* Find maximum price for the previous 10 days by applying the standard function `amax` to the column `High` with the scope 10.
+* Shift the column, which essentially means that now it represents the maximum future price.
+* Find the relative increase of this future maximum price (in percent) by applying a user-defined function `rel_diff_fn`.
+* Compare the relative increase with the given threshold and return either 1 or 0 by applying a user-defined function `ge_fn`.
+
+After we computed the target column, we need to train a classification model using some portion of the input data set and then apply this model to the whole data set. According to the Lambdo conception, it is performed by defining a new column, which will store the result of classification but the model can be trained using the input data:
+
+```json
+{
+  "id": "high_growth_lr",
+  "function": "examples.example9:c_predict",
+  "scope": "all",
+  "inputs": {"exclude": ["max_Price_future", "high_growth"]},
+  "model": "$file:example9_model_lr.pkl",  // Read and use model from this file
+  "train": {  // If file with model is not available then train the model
+
+    "row_filter": {"slice": {"end": 6000}},  // Use only part of the data set for training
+
+    "function": "examples.example9:lr_fit",
+    "model": {},
+
+    "outputs": ["high_growth"]  // Goal variable for training (labels)
+  }
+},
+```
+
+This column definition will try to load the model (of classification) from the specified file. If this file is present then no training will be done. If the file is not found then the model will be trained and the result will be stored in the file as well as used for classification. Note that the model is trained on only a subset of all input data because we defined a `row_filter`.
+
+It is important to note that the training procedure uses the same features which will be used during forecast, that is, the previous parts of the workflow are reused. Another interesting option is that we actually can define several classification algorithms simultaneously the results of which can be then compared or even used as normal derived feature for further analysis.
 
 # How to install
 
