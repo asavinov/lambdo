@@ -43,7 +43,7 @@ class TrainTestCase(unittest.TestCase):
                         {
                             "id": "My column",
                             "function": "test_train:transform_func_1",
-                            "scope": "one",
+                            "window": "one",
                             "inputs": ["A"],
                             "train": {
                                 "function": "test_train:train_func_1",
@@ -78,7 +78,7 @@ class TrainTestCase(unittest.TestCase):
                         {
                             "id": "My column",
                             "function": "test_train:regression_predict",
-                            "scope": "all",
+                            "window": "all",
                             "inputs": ["A"],
                             "outputs": ["B"],
                             "train": {

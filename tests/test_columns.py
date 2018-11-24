@@ -21,7 +21,7 @@ class ColumnsTestCase(unittest.TestCase):
                         {
                             "id": "My column",
                             "function": "builtins:float",
-                            "scope": "one",
+                            "window": "one",
                             "inputs": ["A"],
                             "outputs": ["float(A)"]
                         }
@@ -63,7 +63,7 @@ class ColumnsTestCase(unittest.TestCase):
                         {
                             "id": "sum(A)",
                             "function": "numpy.core.fromnumeric:sum",
-                            "scope": "2",
+                            "window": "2",
                             "inputs": ["A"],
                             "model": {}
                         }
@@ -91,7 +91,7 @@ class ColumnsTestCase(unittest.TestCase):
 
     def test_family_columns(self):
         #
-        # Same function and inputs but different scopes (windows)
+        # Same function and inputs but different windows
         #
         wf_json = {
             "id": "My workflow",
@@ -104,8 +104,8 @@ class ColumnsTestCase(unittest.TestCase):
                             "function": "numpy.core.fromnumeric:sum",
                             "inputs": ["A"],
                             "extensions": [
-                                {"scope": "2"},
-                                {"scope": "3", "outputs": ["sum(A)_win3"]}
+                                {"window": "2"},
+                                {"window": "3", "outputs": ["sum(A)_win3"]}
                             ]
                         }
                     ]
@@ -144,7 +144,7 @@ class ColumnsTestCase(unittest.TestCase):
                         {
                             "id": "A",
                             "inputs": ["A"],
-                            "scope": "2",
+                            "window": "2",
                             "extensions": [
                                 {"function": "numpy.core.fromnumeric:sum", "outputs": "A_sum"},
                                 {"function": "numpy.core.fromnumeric:mean", "outputs": "A_mean"}
@@ -189,7 +189,7 @@ class ColumnsTestCase(unittest.TestCase):
                             {
                                 "id": "My Column",
                                 "function": "pandas.core.series:Series.shift",
-                                "scope": "all",
+                                "window": "all",
                                 "inputs": ["A"],
                                 "outputs": ["next(A)"],
                                 "model": {"periods": -1}
@@ -226,7 +226,7 @@ class ColumnsTestCase(unittest.TestCase):
                         {
                             "id": "mean_w(A)",
                             "function": "lambdo.std:mean_weighted",
-                            "scope": "2",
+                            "window": "2",
                             "inputs": ["A","W"],
                             "model": {}
                         }

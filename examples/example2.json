@@ -13,7 +13,7 @@
         {
           "id": "Date",
           "function": "pandas.core.tools.datetimes:to_datetime",
-          "scope": "one",
+          "window": "one",
           "inputs": "Date",
           "model": {"format": "%Y-%m-%d"}
         }

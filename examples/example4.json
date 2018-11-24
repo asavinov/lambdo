@@ -17,7 +17,7 @@
         {
           "id": "Date",
           "function": "pandas.core.tools.datetimes:to_datetime",
-          "scope": "all",
+          "window": "all",
           "inputs": "Date",
           "model": {"format": "%Y-%m-%d"}
         },
@@ -29,7 +29,7 @@
         {
           "id": "Close_Tomorrow",
           "function": "pandas.core.series:Series.shift",
-          "scope": "all",
+          "window": "all",
           "inputs": ["Close"],
           "model": {"periods": -1}
         }

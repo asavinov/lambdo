@@ -23,7 +23,7 @@
           // Volume weighted average price
           "id": "Price",
           "function": "lambdo.std:mean_weighted",
-          "scope": "2",
+          "window": "2",
           "inputs": ["Price","Volume"]
         },
 
@@ -33,9 +33,9 @@
           "function": "numpy.core.fromnumeric:mean",
           "inputs": ["Price"],
           "extensions": [
-            {"scope": "20"},
-            {"scope": "10"},
-            {"scope": "5"}
+            {"window": "20"},
+            {"window": "10"},
+            {"window": "5"}
           ]
         },
         {
@@ -44,9 +44,9 @@
           "function": "examples.example9:linear_trend_fn",
           "inputs": ["Price"],
           "extensions": [
-            {"scope": "20"},
-            {"scope": "10"},
-            {"scope": "5"}
+            {"window": "20"},
+            {"window": "10"},
+            {"window": "5"}
           ]
         }
       ],
@@ -78,9 +78,9 @@
           "function": "numpy.core.fromnumeric:mean",
           "inputs": ["Price"],
           "extensions": [
-            {"scope": "20"},
-            {"scope": "10"},
-            {"scope": "5"}
+            {"window": "20"},
+            {"window": "10"},
+            {"window": "5"}
           ]
         },
         {
@@ -89,9 +89,9 @@
           "function": "examples.example9:linear_trend_fn",
           "inputs": ["Price"],
           "extensions": [
-            {"scope": "20"},
-            {"scope": "10"},
-            {"scope": "5"}
+            {"window": "20"},
+            {"window": "10"},
+            {"window": "5"}
           ]
         }
       ],
@@ -115,13 +115,13 @@
           "id": "max_Price",
           "function": "numpy.core.fromnumeric:amax",
           "inputs": ["High"],
-          "scope": "10"
+          "window": "10"
         },
         {
           // Maximum for the future time interval (important: now must be excluded)
           "id": "max_Price_future",
           "function": "pandas.core.series:Series.shift",
-          "scope": "all",
+          "window": "all",
           "inputs": ["max_Price"],
           "model": {"periods": -10}
         },
@@ -129,13 +129,13 @@
           // Relative maximum for the future (realtive to now)
           "id": "max_Price_future",
           "function": "examples.example9:rel_diff_fn",
-          "scope": "one",
+          "window": "one",
           "inputs": ["max_Price_future","Close"]
         },
         {
           "id": "high_growth",
           "function": "examples.example9:ge_fn",
-          "scope": "one",
+          "window": "one",
           "inputs": ["max_Price_future"],
           "model": {"threshold": 2.5} // Return 1 if max price is 2.5% higher than the close price
         }
@@ -156,7 +156,7 @@
         {
           "id": "high_growth_lr",
           "function": "examples.example9:c_predict",
-          "scope": "all",
+          "window": "all",
           "inputs": {"exclude": ["max_Price_future", "high_growth"]},
           "model": "$file:example9_model_lr.pkl",  // Read and use model from this file
           "train": {  // If file with model is not available then train the model
@@ -172,7 +172,7 @@
         {
           "id": "high_growth_gb",
           "function": "examples.example9:c_predict",
-          "scope": "all",
+          "window": "all",
           "inputs": {"exclude": ["max_Price_future", "high_growth", "high_growth_lr"]},
           "model": "$file:example9_model_gb.pkl",  // Read and use model from this file
           "train": {  // If file with model is not available then train the model
@@ -188,7 +188,7 @@
         {
           "id": "high_growth_rf",
           "function": "examples.example9:c_predict",
-          "scope": "all",
+          "window": "all",
           "inputs": {"exclude": ["max_Price_future", "high_growth", "high_growth_lr", "high_growth_gb"]},
           "model": "$file:example9_model_rf.pkl",  // Read and use model from this file
           "train": {  // If file with model is not available then train the model

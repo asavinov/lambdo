@@ -254,7 +254,7 @@ class Column:
                 log.warning("Cannot resolve user-defined function '{0}'. Skip column definition.".format(func_name))
                 break
 
-            scope = definition.get('scope')
+            window = definition.get('window')
 
             #
             # Stage 4. Prepare input data argument to pass to the function (as the first argument)
@@ -374,11 +374,11 @@ class Column:
 
             #
             # Stage 6. Apply function.
-            # Depending on the "scope" the system will organize a loop over records, windows or make single call
+            # Depending on the "window" the system will organize a loop over records, windows or make single call
             # It also depends on the call options (how and what to pass in data and model arguments, flatten json, ndarry or Series etc.)
             #
 
-            out = transform(func, scope, data, data_type, model, model_type)
+            out = transform(func, window, data, data_type, model, model_type)
 
             #
             # Stage 7. Post-process the result by renaming the output columns accordingly (some convention is needed to know what output to expect)
@@ -388,7 +388,7 @@ class Column:
                 outputs = [outputs]
             if not outputs:
                 id = definition.get('id')
-                # TODO: We could use a smarter logic here by finding a parameter of the extension which really changes (is overwritten): inputs, function, outputs, scope, model etc.
+                # TODO: We could use a smarter logic here by finding a parameter of the extension which really changes (is overwritten): inputs, function, outputs, window, model etc.
                 if num_extensions > 1:
                     id = id + '_' + str(i)
                 outputs.append(id)

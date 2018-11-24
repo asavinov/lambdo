@@ -18,7 +18,7 @@ class TablesTestCase(unittest.TestCase):
                         {
                             "id": "A",
                             "inputs": ["A"],
-                            "scope": "1",
+                            "window": "1",
                             "extensions": [
                                 {"function": "tests.udf:user_import_fn", "outputs": "Success"}
                             ]

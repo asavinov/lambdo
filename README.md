@@ -36,7 +36,7 @@ Here are some unique distinguishing features of Lambdo:
     * [Row filter](#row-filter)
   * [Column definition](#column-definition)
     * [Column evaluation function](#column-evaluation-function)
-    * [Function scopes](#function-scopes)
+    * [Function window](#function-window)
     * [Training a model](#training-a-model)
 
 * [Examples and analysis templates](#examples-and-analysis-templates)
@@ -107,7 +107,7 @@ Most existing machine learning algorithms are not time-aware and they cannot be 
 
 *	Predefined column definitions for typical goal functions to be predicted or used for training intermediate features. Note that time series analysis is almost always supervised learning but there are different formulations for what we want to forecast.
 
-*	Lambdo is window-aware workflow engine and for any transformation it is necessary to define its scope which means the number of rows the function will be applied to. This parameter is essentially the length of the history (number of previous records to be processed by the function).
+*	Lambdo is window-aware workflow engine and for any transformation it is necessary to define its window which is the number of rows the function will be applied to. This parameter is essentially the length of the history (number of previous records to be processed by the function).
 
 *	Lambdo is going to be also object-aware which means it can partition the whole data set according to the value of the selected column interpreted as an object. This allows us to analyze data coming from multiple objects like devices, sensors, stock symbols etc.
 
@@ -274,15 +274,15 @@ A function is specified as a pair of its module and function name separated by a
 
 It is assumed that the first argument of the function is data to be processed and the second argument is a model which parameterizes this transformation. Note however that some function can take other parameters and also the type of these arguments can vary.
 
-### Function scopes
+### Function window
 
-What data a transformation function receives in its first argument? There are different options starting from a single value and ending with a whole input table. This is determined by the column definition parameter called `scope` which takes the following values:
+What data a transformation function receives in its first argument? There are different options starting from a single value and ending with a whole input table. This is determined by the column definition parameter called `window` which takes the following values:
 
-* Scope `one` or `1` means that Lambdo will apply this function to every row of the input table and the function is expected to return a single value stored as the column value for this record. Type of data passed to the function depends on how many columns the `input` has.
+* Window `one` or `1` means that Lambdo will apply this function to every row of the input table and the function is expected to return a single value stored as the column value for this record. Type of data passed to the function depends on how many columns the `input` has.
   * If `input` has only one column then the function will receive a single value.
   * If `input` has more than 1 columns then the function will receive a `Series` object with their field values.
-* Scope `all` means that the function will be applied to all rows of the table, that is, there will be one call and the whole table will be passed as a parameter. Type of the argument is `DataFrame`.
-* Otherwise the system assume that the function has to be applied to all subsets of the table rows, called windows. Size of the window (number of records in one group) is scope value. For example, `scope: 5` means that each window will consists of 5 records. Type of this group depends on the number of columns in the `input`: 
+* Window `all` means that the function will be applied to all rows of the table, that is, there will be one call and the whole table will be passed as a parameter. Type of the argument is `DataFrame`.
+* Otherwise the system assume that the function has to be applied to all subsets of the table rows, called windows. Size of the window (number of records in one group) is window value. For example, `window: 5` means that each window will consists of 5 records. Type of this group depends on the number of columns in the `input`: 
   * If `input` has only one column then the function will receive a `Series` of values.
   * If `input` has more than 1 columns then the function will receive a `DataFrame` object with the records from the group.
 
@@ -296,7 +296,7 @@ How a model is trained is specified in a block within a column definition:
 {
   "id": "Prediction",
   "function": "examples.example1:gb_predict",
-  "scope": "all",
+  "window": "all",
   "inputs": {"exclude": ["Labels"]},
   "train": {
     "function": "examples.example1:gb_fit",
@@ -370,14 +370,14 @@ The table definition where we load data has no column definitions. However, we c
       {
           "id": "Datetime",
           "function": "pandas.core.tools.datetimes:to_datetime",
-          "scope": "one",
+          "window": "one",
           "inputs": "Date"
       }
     ]
 }
 ```
 
-The most important parameter in this column definition is `scope`. If it is `one` (or `1`) then the function will be applied to each row of the table. In other words, this function will get *one* row as its first argument. After evaluating this column definition, the table will get a new column `Datetime` storing time stamp objects (which are more convenient for further data transformations). 
+The most important parameter in this column definition is `window`. If it is `one` (or `1`) then the function will be applied to each row of the table. In other words, this function will get *one* row as its first argument. After evaluating this column definition, the table will get a new column `Datetime` storing time stamp objects (which are more convenient for further data transformations). 
 
 If we do not need the source (string) column then the new column may get the same name `"id": "Date"` and it will overwrite the already existing column. Also, if the source column has a non-standard format then it can be specified in the model `"model": {"format": "%Y-%m-%d"}` which will be passed to the function.
 
@@ -385,7 +385,7 @@ If we do not need the source (string) column then the new column may get the sam
 {
     "id": "Datetime",
     "function": "pandas.core.tools.datetimes:to_datetime",
-    "scope": "one",
+    "window": "one",
     "inputs": "Date",
     "model": {"format": "%Y-%m-%d"}
 }
@@ -441,13 +441,13 @@ Each function including this one can accept additional arguments via its `model`
 
 ## Example 4: Table-based features
 
-A record-based function with scope 1 will be applied to each row of the table and get this row fields in arguments. There will be as many calls as there are rows in the table. If `scope` is equal to `all` then the function will be called only one time and it will get all rows it has to process. Earlier, we described how string dates can be converted to datetime object by applying the transformation function to each row. The same result can be obtained if we pass the whole column to the transformation function. The only field that has to be changed in this definition is `scope`, which is now equals `all`:
+A record-based function with window 1 will be applied to each row of the table and get this row fields in arguments. There will be as many calls as there are rows in the table. If `window` is equal to `all` then the function will be called only one time and it will get all rows it has to process. Earlier, we described how string dates can be converted to datetime object by applying the transformation function to each row. The same result can be obtained if we pass the whole column to the transformation function. The only field that has to be changed in this definition is `window`, which is now equals `all`:
 
 ```json
 {
   "id": "Datetime",
   "function": "pandas.core.tools.datetimes:to_datetime",
-  "scope": "all",
+  "window": "all",
   "inputs": "Date",
   "model": {"format": "%Y-%m-%d"}
 }
@@ -463,7 +463,7 @@ Another example of applying a function to all rows is shifting a column. For exa
 {
   "id": "Close_Tomorrow",
   "function": "pandas.core.series:Series.shift",
-  "scope": "all",
+  "window": "all",
   "inputs": ["Close"],
   "model": {"periods": -1}
 }
@@ -475,7 +475,7 @@ Values of this new column will be equal to the value of the specified input colu
 
 Lambdo is focused on time series analysis where important pieces of behavior (features) are hidden in sequences of events. Therefore, one of the main goals of feature engineering is making such features explicitly as attribute values by extracting data from the history. Normally it is done by using rolling aggregation where a function is applied to some historic window of recent events and returns one value, which characterizes the behavior. In Lambdo, it is possible to specify an arbitrary (Python) function, which encodes some domain-specific logic specific for this feature.
 
-For window-based columns, the most important parameter is `scope` which is an integer specifying the number of events to be passed to the function as its first argument. For example, if `"scope": 10` then the Python function will always get 10 elements of the time series: this element and 9 previous elements. It can be a series of 10 values or a sub-table with 10 rows depending on other parameters. The function then analyzes these 10 events and returns one single value, which is stored as a value of this derived column.
+For window-based columns, the most important parameter is `window` which is an integer specifying the number of events to be passed to the function as its first argument. For example, if `"window": 10` then the Python function will always get 10 elements of the time series: this element and 9 previous elements. It can be a series of 10 values or a sub-table with 10 rows depending on other parameters. The function then analyzes these 10 events and returns one single value, which is stored as a value of this derived column.
 
 Assume that we want to find running average volume for 10 days. This can be done as follows:
 
@@ -483,7 +483,7 @@ Assume that we want to find running average volume for 10 days. This can be done
 {
   "id": "mean_Volume",
   "function": "numpy.core.fromnumeric:mean",
-  "scope": 10,
+  "window": 10,
   "inputs": ["Volume"]
 }
 ```
@@ -492,7 +492,7 @@ Each value of the derived column `mean_Volume` will store average volume for the
 
 Note that instead of `mean` we could use arbitrary Python function including user-defined functions. Such a function will be called for each row in the table and it will get 10 values of the volume for the last 10 days (including this one). For example, we could write a function which counts the number of peaks (local maximums) in volume or we could find some more complex pattern. Also, if `inputs` has more columns then the functions will get a data frame as input with the columns specified in `inputs`.
 
-Typically in time series analysis we use several running aggregations with different window sizes. Such columns can can be defined independently but their definitions will differ only in one parameter: `scope`. In order to simplify such definitions Lambdo allows for defining a base definition and extensions. For example, if we want to define average volumes with windows 10, 5 and 2 then this can be done by definition scopes in the extensions:
+Typically in time series analysis we use several running aggregations with different window sizes. Such columns can can be defined independently but their definitions will differ only in one parameter: `window`. In order to simplify such definitions Lambdo allows for defining a base definition and extensions. For example, if we want to define average volumes with windows 10, 5 and 2 then this can be done by defining windows in the extensions:
 
 ```json
 {
@@ -500,9 +500,9 @@ Typically in time series analysis we use several running aggregations with diffe
   "function": "numpy.core.fromnumeric:mean",
   "inputs": ["Volume"],
   "extensions": [
-    {"scope": "10"},
-    {"scope": "5"},
-    {"scope": "2"}
+    {"window": "10"},
+    {"window": "5"},
+    {"window": "2"}
   ]
 }
 ```
@@ -549,7 +549,7 @@ Here is an example of a column definition which trains and applies a gradient bo
 {
   "id": "Close_Tomorrow_Predict",
   "function": "examples.example6:gb_predict",
-  "scope": "all",
+  "window": "all",
   "data_type": "ndarray",
   "inputs": {"exclude": ["Date", "Close_Tomorrow"]},
   "train": {
@@ -622,7 +622,7 @@ The general goal is to predict the price. But simply using future (numeric) pric
 
 Deriving such a column is performed by performing the following steps:
 
-* Find maximum price for the previous 10 days by applying the standard function `amax` to the column `High` with the scope 10.
+* Find maximum price for the previous 10 days by applying the standard function `amax` to the column `High` with the window 10.
 * Shift the column, which essentially means that now it represents the maximum future price.
 * Find the relative increase of this future maximum price (in percent) by applying a user-defined function `rel_diff_fn`.
 * Compare the relative increase with the given threshold and return either 1 or 0 by applying a user-defined function `ge_fn`.
@@ -633,7 +633,7 @@ After we computed the target column, we need to train a classification model usi
 {
   "id": "high_growth_lr",
   "function": "examples.example9:c_predict",
-  "scope": "all",
+  "window": "all",
   "inputs": {"exclude": ["max_Price_future", "high_growth"]},
   "model": "$file:example9_model_lr.pkl",  // Read and use model from this file
   "train": {  // If file with model is not available then train the model

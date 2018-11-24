@@ -7,7 +7,7 @@ import logging
 log = logging.getLogger('TRANSFORM')
 
 
-def transform(func, scope, data, data_type, model, model_type):
+def transform(func, window, data, data_type, model, model_type):
     """
     Apply the specified transformation to the data by producing new column.
     :return: None. The generated columns will be added to the input data frame.
@@ -26,10 +26,10 @@ def transform(func, scope, data, data_type, model, model_type):
         data_arg = data
 
     #
-    # Apply function depending on the scope
+    # Apply function depending on the window
     #
     out = None
-    if scope == 'all':  # Apply function to the whole table
+    if window == 'all':  # Apply function to the whole table
 
         if isinstance(model, dict):
             out = func(data_arg, **model)
@@ -38,7 +38,7 @@ def transform(func, scope, data, data_type, model, model_type):
         else:
             out = func(data_arg, model)
 
-    elif scope is None or scope == 'one' or scope == '1':  # Apply function to each row of the table
+    elif window is None or window == 'one' or window == '1':  # Apply function to each row of the table
 
         #
         # Check if the function is applied to a single column or multiple columns depending on the number of input columns
@@ -70,9 +70,9 @@ def transform(func, scope, data, data_type, model, model_type):
 
     else:  # Apply function to each window of the table
         #
-        # Determine window size. The scope parameter can be string, number or object (many arguments for rolling object)
+        # Determine window size. The window parameter can be string, number or object (many arguments for rolling object)
         #
-        window_size = int(scope)
+        window_size = int(window)
         rolling_args = {'window': window_size}
         # TODO: try/catch with log message if cannot get window size
 
