@@ -81,8 +81,7 @@ def import_modules(imports):
     for mod_name in imports:
         mod = None
         try:
-            pass
-            #mod = importlib.import_module(mod_name)
+            mod = importlib.import_module(mod_name)
         except ImportError as ie:
             pass
 

@@ -48,6 +48,7 @@ Here are some unique distinguishing features of Lambdo:
   * [Example 6: Training a model](#example-6-training-a-model)
   * [Example 7: Reading and writing models](#example-7-reading-and-writing-models)
   * [Example 8: Joining input tables](#example-8-joining-input-tables)
+  * [Example 9: Train and apply](#example-9-train-and-apply)
 
 * [How to install](#how-to-install)
   * [Install from source code](#install-from-source-code)
@@ -709,3 +710,12 @@ $ lambdo examples/example1.json
 ```
 
 The workflow reads a CSV file, computes some features from the time series data, trains a model by applying it them to the data and finally writes the result to an output CSV file.
+
+Lambdo can be used from within another Python program:
+
+```python
+from lambdo.Workflow import *
+wf_json = {...}  # Some workflow
+wf = Workflow(wf_json)  # Create Lambdo object
+wf.execute()  # Execute workflow
+```

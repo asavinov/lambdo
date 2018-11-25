@@ -1,9 +1,9 @@
-from setuptools import setup
+import setuptools
 
 # import ``__version__`` from code base
 exec(open('lambdo/version.py').read())
 
-setup(
+setuptools.setup(
     name='lambdo',
     version=__version__,
 
@@ -13,24 +13,36 @@ setup(
     author_email='savinov@conceptoriented.org',
     license='MIT License',
     keywords = "feature engineering machine learning data science analytics data mining forecasting time series",
-    url='http://conceptoriented.org',
+    url='https://github.com/asavinov/lambdo',
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.6",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Intended Audience :: Developers ",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Software Development",
+    ],
 
     test_suite='nose.collector',
     tests_require=['nose'],
 
     # dependencies
     install_requires=[
-        'numpy>=1.14.5',
+        'numpy>=1.15.0',
+        'pandas>=0.23.0',
         'scipy>=1.1.0',
-        'pandas>=0.23.3',
-        'scikit-learn>=0.19.1',
+        'scikit-learn>=0.20.0',
         'statsmodels>=0.9.0',
         'patsy>=0.5.0',
     ],
     zip_safe=True,
 
     # package content (what to include)
-    packages=['lambdo'],
+    packages=setuptools.find_packages(),
+
     package_data={
         # If any package contains *.txt or *.rst files, include them:
         '': ['*.md', '*.txt', '*.rst'],

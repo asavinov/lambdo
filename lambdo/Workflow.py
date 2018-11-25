@@ -249,6 +249,10 @@ class Column:
             # Stage 3. Resolve the function
             #
             func_name = definition.get('function')
+            if not func_name:
+                log.warning("Column function is not specified. Skip column definition.".format(func_name))
+                break
+
             func = resolve_full_name(func_name)
             if not func:
                 log.warning("Cannot resolve user-defined function '{0}'. Skip column definition.".format(func_name))

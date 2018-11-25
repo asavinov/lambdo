@@ -23,7 +23,7 @@
         },
         {
           "id": "diff_high_low",
-          "function": "examples.example3:diff_fn",
+          "function": "examples.example6:diff_fn",
           "inputs": ["High", "Low"]
         },
         {
