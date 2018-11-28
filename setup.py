@@ -9,6 +9,8 @@ setuptools.setup(
 
     # descriptive metadata for upload to PyPI
     description='Feature engineering and machine learning: together at last!',
+    long_description=open("README.md", "r").read(),
+    long_description_content_type="text/markdown",
     author='Alexandr Savinov',
     author_email='savinov@conceptoriented.org',
     license='MIT License',
