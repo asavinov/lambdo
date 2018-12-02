@@ -12,19 +12,39 @@ log = logging.getLogger('RESOLVE')
 
 
 def resolve_full_name(full_name: str):
-    # Example: 'mod1.mod2.mod3:class1.class2.func1.func2'
-    if not full_name: return None
-    mod_and_func = full_name.split(':', 1)
-    mod_name = mod_and_func[0] if len(mod_and_func) > 1 else None
-    func_name = mod_and_func[-1]
+    """
+    Resolve the specified name or definition of the function to a reference.
+    Fully qualified name consists of module name and function name separated by a colon, for example:  'mod1.mod2.mod3:class1.class2.func1.func2'.
+    Function definition is a lambda.
+    """
 
-    if mod_name:
-        mod = resolve_module(mod_name)
-        if mod is None: return None
-        func = resolve_name_in_mod(func_name, mod)
+    if not full_name:
+        return None
+
+    elif full_name.strip().startswith('lambda '):
+        try:
+            func = eval(full_name)
+        except Exception as e:
+            log.error("Error translating lambda function: {0}.".format(full_name))
+            log.debug(e)
+            return None
         return func
 
-    # TODO: Module is not specified. Search in all modules
+    elif full_name.strip().startswith('def '):
+        pass  # TODO: Standard function definition
+
+    else:  # Function name
+        mod_and_func = full_name.split(':', 1)
+        mod_name = mod_and_func[0] if len(mod_and_func) > 1 else None
+        func_name = mod_and_func[-1]
+
+        if mod_name:
+            mod = resolve_module(mod_name)
+            if mod is None: return None
+            func = resolve_name_in_mod(func_name, mod)
+            return func
+        else:
+            pass # TODO: Module is not specified. Search in all modules
 
     return None
 

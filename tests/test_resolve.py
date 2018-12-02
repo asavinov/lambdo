@@ -103,6 +103,20 @@ class ResolveTestCase(unittest.TestCase):
         # __qualname__ = 'ResolveTestCase.test_resolve.<locals>.test_func'
         # __module__ = 'test_resolve'
 
+    def test_resolve_lambda(self):
+        x = lambda x: x + 2
+
+        ff = resolve_full_name('lambda x: x + 1')
+        self.assertIsNotNone(ff)
+
+        self.assertEqual(ff.__name__, '<lambda>')
+        self.assertEqual(ff.__qualname__, '<lambda>')
+        self.assertEqual(ff.__module__, 'lambdo.resolve')
+        self.assertEqual(type(ff).__name__, 'function')
+        self.assertTrue(inspect.isfunction(ff))
+
+        self.assertEqual(ff(1), 2)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,9 @@
 # Change Log
 
+* v0.4.0-SNAPSHOT (in progress)
+
+  * Functions defined as lambdas (and not only by name)
+
 * v0.3.0 (2018-11-25)
 
   * A number of new examples
