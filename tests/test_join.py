@@ -2,7 +2,7 @@ import unittest
 
 from lambdo.Workflow import *
 
-class TablesTestCase(unittest.TestCase):
+class JoinTestCase(unittest.TestCase):
 
     def setUp(self):
         pass
