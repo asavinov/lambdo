@@ -264,9 +264,7 @@ class Column:
             # Stage 4. Prepare input data argument to pass to the function (as the first argument)
             #
             data = table
-            inputs = definition.get('inputs')
-            if inputs is None:
-                inputs = []
+            inputs = definition.get('inputs', [])
             inputs = get_columns(inputs, data)
             if inputs is None:
                 log.warning("Error reading column list. Skip column definition.")

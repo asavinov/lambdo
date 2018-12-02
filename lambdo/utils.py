@@ -101,7 +101,7 @@ def get_columns(names, df=None):
 
         # Process default (auto) values
         if len(result) == 0 and df is not None:  # Explicit empty list = ALL columns
-            result = df.columns.tolist()
+            result = get_all_columns(df)
 
     elif isinstance(names, dict):  # An object specifying which columns to select
         exclude = names.get("exclude")
@@ -112,7 +112,7 @@ def get_columns(names, df=None):
             return None
 
         # Get all columns and exclude the specified ones
-        all_columns = df.columns.tolist()
+        all_columns = get_all_columns(df)
         result = [x for x in all_columns if x not in exclude_columns]
 
     else:
@@ -124,7 +124,9 @@ def get_columns(names, df=None):
     #
 
     # Check that all columns are available
-    if df is not None:
+    if df is None:
+        return result
+    elif isinstance(df, pd.DataFrame):
         out = []
         for col in result:
             if col in df.columns:
@@ -133,7 +135,34 @@ def get_columns(names, df=None):
                 log.warning("Column '{0}' cannot be found. Skip column.".format(str(col)))
         return out
 
+    elif isinstance(df, pd.core.groupby.groupby.DataFrameGroupBy):
+        out = []
+        for col in result:
+            col_exists = False
+            try:
+                df.__getattr__(col)
+                col_exists = True
+            except:
+                pass
+
+            if col_exists:
+                out.append(col)
+            else:
+                log.warning("Column '{0}' cannot be found. Skip column.".format(str(col)))
+        return out
+
     return result
+
+def get_all_columns(df):
+    if df is None:
+        return []
+    elif isinstance(df, pd.DataFrame):
+        return df.columns.tolist()
+    elif isinstance(df, pd.core.groupby.groupby.DataFrameGroupBy):
+        # TODO: We need to exclude key columns which are used for gropuing
+        return df.obj.columns.tolist()
+    else:
+        return None
 
 def all_columns_exist(names, df):
     all_columns_available = True

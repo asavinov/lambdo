@@ -7,6 +7,7 @@ import urllib.parse
 import pandas as pd
 
 from lambdo.utils import *
+from lambdo.resolve import *
 
 import logging
 log = logging.getLogger('STD')
@@ -94,8 +95,43 @@ def aggregate(df, **model):
     #
     # TODO; For each aggregate column definition, add a new column to the output data frame
     #
+    definitions_json = model.get('aggregations', [])
+
+    for col_json in definitions_json:
+        _aggregate_simple(gb, out, model, col_json)
 
     return out
+
+def _aggregate_simple(gb, out, model, col_json):
+    func_name = col_json.get('function')
+    if not func_name:
+        log.warning("Column function is not specified. Skip column definition.".format(func_name))
+        return
+
+    func = resolve_full_name(func_name)
+    if not func:
+        log.warning("Cannot resolve user-defined function '{0}'. Skip column definition.".format(func_name))
+        return
+
+    inputs = col_json.get('inputs', [])
+    #inputs = get_columns(inputs, gb)
+
+    if not inputs:  # Size of the group in records
+        sr = gb.size()
+    else:  # One column with data to be aggregated
+        sr = gb[inputs].agg(func)  # udf will get a series with group values
+
+    #
+    # Determine output column name
+    #
+    outputs = col_json.get('outputs')
+    if not outputs:
+        outputs = col_json.get('id')
+
+    #
+    # Add the aggregated column to the result
+    #
+    out[outputs] = sr
 
 def mean_weighted(df, **model):
     '''Find mean value of the first column weighted by the values in the second column.
