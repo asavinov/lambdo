@@ -229,7 +229,7 @@ class Column:
         """
         Evaluate this column.
         """
-        log.info("  ===> Start evaluating column '{0}'".format(self.id))
+        log.info("  ---> Start evaluating column '{0}'".format(self.id))
 
         #
         # Stage 1: Ensure that "data" field is ready for applying column operations
@@ -409,7 +409,7 @@ class Column:
         # Stage 8. Post-process the whole family
         #
 
-        log.info("  <=== Finish evaluating column '{0}'".format(self.id))
+        log.info("  <--- Finish evaluating column '{0}'".format(self.id))
 
 
 if __name__ == "__main__":

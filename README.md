@@ -5,7 +5,7 @@
 
 # Feature engineering and machine learning: together at last!
 
-Lambdo is a workflow engine which significantly simplifies the analysis process by *unifying* feature engineering and machine learning operations. Lambdo data analysis workflow does not distinguish between them and any node can be treated either as a feature or as prediction, and both of them can be trained.
+Lambdo is a workflow engine which significantly simplifies data analysis by *unifying* feature engineering and machine learning operations. Lambdo data analysis workflow does not distinguish between them and any node can be treated either as a feature or as prediction, and both of them can be trained.
 
 Such a unification is possible because of the underlying *column-oriented* data processing paradigm which treats columns as first-class elements of the data processing pipeline having the same rights as tables. In Lambdo, a workflow consist of *table population* operations which process sets of records and *column evaluation* operations which produce new columns (features) from existing columns. This radically changes the way data is processed. The same approach is used also in Bistro: <https://github.com/asavinov/bistro>
 
