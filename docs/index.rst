@@ -16,7 +16,8 @@ Lambdo is bla-bla
    :caption: Contents:
 
    Introduction <text/introduction>
-   Principles <text/principles>
+   Why Lambdo? <text/why>
+   Principles behind Lambdo <text/principles>
 
 Indices and tables
 ==================
