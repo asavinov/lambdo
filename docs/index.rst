@@ -18,6 +18,7 @@ Lambdo implements a novel *column-oriented* approach to data analysis by unifyin
    Why Lambdo? <text/why>
    Principles behind Lambdo <text/principles>
    Workflow definition <text/workflow>
+   Table definition <text/tables>
 
 Indices and tables
 ==================
