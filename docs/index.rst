@@ -15,8 +15,8 @@ Lambdo is bla-bla
    :maxdepth: 2
    :caption: Contents:
 
-   introduction
-   principles
+   Introduction <text/introduction>
+   Principles <text/principles>
 
 Indices and tables
 ==================

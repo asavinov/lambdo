@@ -44,12 +44,14 @@ High level tools are intended for rapid prototyping and getting fast results by 
 
 On the other hand, we can get almost full control over the process of data transformations by implementing all the necessary steps in some programming or scriping language like Python. Yet, it is a quite tedious and error-prone approach which requires high expertise.
 
-Lambdo tries to provide means for working at both levels: 
+Lambdo tries to provide means for working at both levels:
 
 * at high level, Lambdo provides its workflow structure of table and column operations, and
 * at low level, the nodes are customized using arbitrary user-defined (Python) functions
 
-In other words, how concretely tables are populated and how concretely columns are evaluated is not defined by Lambdo - it is the task of the developer to specify the necessary behavior of table and column nodes.
+In other words, how concretely tables are populated and how concretely columns are evaluated is not defined by Lambdo - it is the task of the developer to specify the necessary behavior of table and column nodes:
+
+> The data processing logic in a Lambdo workflow is modularized in column and table definitions implemented via (Python) user-defined functions while the workflow determines the structure of computations
 
 Such a customization is performed by specifying a (Python) function for each node in a special field:
 
@@ -64,7 +66,7 @@ These functions of course have to obey some conventions for getting parameters a
 
 ## Features and machine learning models
 
-### Column first: features are columns
+### Features are transformations producing new columns
 
 An important observation is that
 
@@ -72,7 +74,7 @@ An important observation is that
 
 This means that defining a new feature during data processing is reduced to defining a new column. It is precisely what is well supported by Lambdo in contrast to other approaches where you still need to think in terms of new tables in a data processing pipeline.
 
-### Column first: predictions are columns
+### Predictions are transformations producing new columns
 
 Another important observation is that
 
@@ -82,7 +84,7 @@ Indeed, assume that we have a classification model which distinguishes dogs (cla
 
 Lambdo relies on this principle and simplifies its approach to data processing by using only the notion of column transformation while features or predictions are two possible interpretations. In other words, we cannot say whether some transformation is a feature or it is a prediction: it depends on our understanding of their role in the data analysis pipeline. Typically, simple transformations are treated as features while more complex computations with inference are treated as predictions. Also, initial and intermediate transformations tend to be treated as features while the final result is interpreted as a prediction.
 
-### Any transformation has a model
+### A transformation is parameterized using a model
 
 A transformation with all parameters hard-coded is a relatively rare case (of simple transformations). Complex transformations are typically parameterized so that it is easier to adapt it to different tasks or input data sets. For example, if we want to find a difference of temperature from average temperature, then initially we do not know this average temperature or it can very. Therefore, we assume that it is a parameter of the transformation. Such a (column) transformation function will then have one argument with input data (temperature) and one argument with the parameter (average temperature). The function will return the difference between the first argument and the second argument. Importantly, the data argument is a variable while the parameter is always constant.
 
@@ -104,7 +106,7 @@ For example, finding a deviation from some value is described as follows:
 
 Here it is assumed that the function will get one input value in its first argument and the model in its second argument. This function then computes the difference and returns it. For example, if the input object has temperature 23 then it will return 2. What is important here is that we can always change the model without changing the code. Another important note is that this model can be as complex as neural networks. Of course, the model can be empty.
 
-### Learn parameters of transformations from the data
+### Models (parameters of transformations) can be learnt from the data
 
 Specifying constant models for transformations is a convenient feature which however does not dramatically change our approach to data processing. What is really important is that 
 
