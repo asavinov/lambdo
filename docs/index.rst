@@ -8,8 +8,7 @@ Welcome to Lambdo's documentation!
 
 About Lambdo
 ````````````
-
-Lambdo is bla-bla
+Lambdo implements a novel *column-oriented* approach to data analysis by unifying various kinds of data processing: feature engineering, data transformations and data mining.
 
 .. toctree::
    :maxdepth: 2
@@ -18,6 +17,7 @@ Lambdo is bla-bla
    Introduction <text/introduction>
    Why Lambdo? <text/why>
    Principles behind Lambdo <text/principles>
+   Workflow definition <text/workflow>
 
 Indices and tables
 ==================
