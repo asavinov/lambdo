@@ -19,6 +19,7 @@ Lambdo implements a novel *column-oriented* approach to data analysis by unifyin
    Principles behind Lambdo <text/principles>
    Workflow definition <text/workflow>
    Table definition <text/tables>
+   Column definition <text/columns>
 
 Indices and tables
 ==================

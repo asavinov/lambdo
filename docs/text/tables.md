@@ -33,7 +33,7 @@ We can specify a list of columns, which have to be selected and passed to the ne
   "id": "My table",
   "function": "pandas:read_csv",
   "column_filter": ["Open", "Close"]
-},
+}
 ```
 
 Alternatively, we can specify columns, which have to be excluded from the selected features to be passed to the next nodes:
@@ -43,7 +43,7 @@ Alternatively, we can specify columns, which have to be excluded from the select
   "id": "My table",
   "function": "pandas:read_csv",
   "column_filter": {"exclude": ["Date"]}
-},
+}
 ```
 
 The next table will then receive a table with all columns generated in this table excepting the `Date` column (which contains time stamps not needed for analysis).
@@ -59,7 +59,7 @@ Many analysis algorithms cannot deal with `NaN` values and the simplest way to s
   "id": "My table",
   "function": "pandas:read_csv",
   "row_filter": {"dropna": true}
-},
+}
 ```
 
 The `dropna` can also specify a list of columns and then only the values of these columns will be checked.
@@ -71,7 +71,7 @@ Another way to filter rows is to specify columns with boolean values and then th
   "id": "My table",
   "function": "pandas:read_csv",
   "row_filter": {"predicate": ["Selection"]}
-},
+}
 ```
 
 A column with binary values can be defined precisely as any other derived column using a function, which knows which records are needed for analysis. (This column can be then removed by using a column filter.)
@@ -83,7 +83,7 @@ It is also possible to reandomly shuffle records by specifying the portion we wa
   "id": "My table",
   "function": "pandas:read_csv",
   "row_filter": {"sample": {"frac": 0.8}
-},
+}
 ```
 
 You can specify `"sample":true` if all records have to be shuffled.
@@ -95,5 +95,5 @@ The records can be also selected by specifying their integer position: start, en
   "id": "My table",
   "function": "pandas:read_csv",
   "row_filter": {"slice": {"start": 0, "step": 2}
-},
+}
 ```
