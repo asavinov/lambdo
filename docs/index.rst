@@ -11,7 +11,7 @@ About Lambdo
 Lambdo implements a novel *column-oriented* approach to data analysis by unifying various kinds of data processing: feature engineering, data transformations and data mining.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    Introduction <text/introduction>
@@ -20,6 +20,7 @@ Lambdo implements a novel *column-oriented* approach to data analysis by unifyin
    Workflow definition <text/workflow>
    Table definition <text/tables>
    Column definition <text/columns>
+   Examples <text/examples>
 
 Indices and tables
 ==================

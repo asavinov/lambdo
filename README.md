@@ -312,7 +312,7 @@ Here we need to specify a function which will perform such a training: `"functio
 
 Lambdo will first train a model by using the input data and then use this model for prediction.
 
-# Examples and analysis templates
+# Examples
 
 ## Example 1: Input and output
 
