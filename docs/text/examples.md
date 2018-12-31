@@ -1,47 +1,5 @@
 # Examples
 
-## Example 1: Input and output
-
-Assume that the data is stored in a CSV file and we want to use this data to produce new features or for data analysis. Loading data is a table population operation which is defined in some table node of the workflow. How the table is populated depends on the `function` of this definition. In our example, we want to re-use a standard `pandas` for loading CSV files. Such a table node is defined as follows:
-
-```json
-{
-  "id": "Source table",
-  "function": "pandas:read_csv",
-  "inputs": [],
-  "model": {
-    "filepath_or_buffer": "my_file.csv",
-    "nrows": 100
-  }
-}
-```
-
-After executing this node, it will store the data from this file. We could also use any other function for loading or generating data. For example, it could a function which produces random data.
-
-Data output can also be performed by using a standard `pandas` function:
-
-```json
-{
-  "id": "Source table",
-  "function": "pandas:DataFrame.to_csv",
-  "inputs": "Source table",
-  "model": {
-    "path_or_buf": "my_output.csv",
-    "index": false
-  }
-}
-```
-
-Note that the `inputs` fields points to the table which needs to be processed. The result of its execution will be a new CSV file.
-
-Run this example from command line by executing:
-
-```console
-$ lambdo examples/example1.json
-```
-
-Another useful standard function for storing a table is `to_json` with a possible model like `{"path_or_buf": "my_file.json.gz", "orient"="records", "lines"=True, "compression"="gzip"}` (the file will be compressed). To read a JSON file into a table, use the function `read_json`.
-
 ## Example 2: Record-based features
 
 The table definition where we load data has no column definitions. However, we can easily add them. A typical use case is where we want to change the format or data type of some columns. For example, if the source file has a text field with a time stamp then we might want to convert it the `datetime` object which is done by defining a new column:
@@ -282,25 +240,6 @@ The general rule is that if a JSON field value is a string which starts from `$`
 Now Lambdo will try to load this model from the file. If it succeeds then the model will be used for transformation (no training needed). If it fails, for example, the file does not exist, then Lambdo will generate this model by using the training function, store the model in the file and then use it for generating the column as usual.
 
 Example 7 has one small modification with respect to Example 6: its trained model is stored in a file. As a result, we can apply this workflow to a large data set for training, and then this same workflow with the present model can be applied to smaller data sets for prediction.
-
-## Example 8: Joining input tables
-
-Frequently it is necessary to load data from many different data sources and merge them into one table the columns of which can be then used for generating features and analysis. Lambdo provides a standard table function `lambdo.std:join`  which populates a new table by joining data from a list of input tables. For example, assume that we want to analyze daily quotes for some symbol but in addition we want to load another quote data for the same days. The two input tables are specified in the `input` field. The first table `GSPC` in this list is treated as a main table while the second table `VIX` is attached to it:
-
-```json
-{
-  "id": "Merged Table",
-  "function": "lambdo.std:join",
-  "inputs": ["GSPC", "VIX"],
-  "model": {"suffixes": ["", "_VIX"]},
-}
-```
-
-This new table will contain as many records as the first table contains but in addition to its columns it will have also columns from the second table. The model of the join function allows for specifying suffixes for columns.
-
-The `join` function by default join using the row numbers. If it is necessary to join by using columns then they can be specified in the `keys` field of the table model as a list of column names.
-
-Example 8 demonstrate how to load quotes from two different files and then predict closing price of one symbol taking into account the data for the second symbol.
 
 ## Example 9: Train and apply
 
