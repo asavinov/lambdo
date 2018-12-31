@@ -23,27 +23,3 @@ What data a transformation function receives in its first argument? There are di
 * Otherwise the system assume that the function has to be applied to all subsets of the table rows, called windows. Size of the window (number of records in one group) is window value. For example, `window: 5` means that each window will consists of 5 records. Type of this group depends on the number of columns in the `input`: 
   * If `input` has only one column then the function will receive a `Series` of values.
   * If `input` has more than 1 columns then the function will receive a `DataFrame` object with the records from the group.
-
-## Training a model
-
-A new feature is treated as a transformation, which results in a new column with the values derived from the data in other columns. This transformation is performed using some *model*, which is simply a set of parameters. A model can be specified explicitly by-value if we know these parameters. However, model parameters can be derived from the data using a separate procedure, called *training*. The transformation is then applied *after* the training.
-
-How a model is trained is specified in a block within a column definition:
-
-```json
-{
-  "id": "Prediction",
-  "function": "examples.example1:gb_predict",
-  "window": "all",
-  "inputs": {"exclude": ["Labels"]},
-  "train": {
-    "function": "examples.example1:gb_fit",
-    "model": {"n_estimators": 500, "max_depth": 4, "min_samples_split": 2, "learning_rate": 0.01, "loss": "ls"},
-    "outputs": ["Labels"]
-  }
-}
-```
-
-Here we need to specify a function which will perform such a training: `"function": "examples.example1:gb_fit"`. The training function also needs its own hyper-parameters, for example: `"model": {"max_depth": 4}`. Finally, the training procedure (in the case of supervised learning) needs labels: `"outputs": ["Labels"]`. Note also that excluded the `Labels` from the input so that they are not used as features for training.
-
-Lambdo will first train a model by using the input data and then use this model for prediction.
