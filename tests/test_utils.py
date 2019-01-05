@@ -1,6 +1,8 @@
 import unittest
 
 from lambdo.Workflow import *
+from lambdo.Table import *
+from lambdo.Column import *
 
 class TablesTestCase(unittest.TestCase):
 

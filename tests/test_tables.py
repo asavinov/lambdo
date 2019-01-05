@@ -53,7 +53,7 @@ class TablesTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         self.assertEqual(len(tb.data.columns), 2)
         self.assertEqual(len(tb.data), 1)
@@ -77,7 +77,7 @@ class TablesTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         self.assertEqual(len(tb.data.columns), 1)  # Predicate columns will be removed by default
         self.assertEqual(len(tb.data), 1)
@@ -101,7 +101,7 @@ class TablesTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         self.assertEqual(len(tb.data.columns), 1)  # Predicate columns will be removed by default
         self.assertEqual(len(tb.data), 2)
@@ -125,7 +125,7 @@ class TablesTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         self.assertEqual(len(tb.data.columns), 1)  # Predicate columns will be removed by default
         self.assertEqual(len(tb.data), 2)
@@ -156,7 +156,7 @@ class TablesTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         self.assertEqual(len(tb.data.columns), 1)
         self.assertEqual(len(tb.data), 3)
@@ -179,7 +179,7 @@ class TablesTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         self.assertEqual(len(tb.data.columns), 1)
         self.assertEqual(len(tb.data), 3)
@@ -201,7 +201,7 @@ class TablesTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         self.assertEqual(len(tb.data.columns), 2)
         self.assertEqual(len(tb.data), 3)

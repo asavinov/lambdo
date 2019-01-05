@@ -37,7 +37,7 @@ class ColumnsTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         v0 = tb.data['float(A)'][0]
         v1 = tb.data['float(A)'][1]
@@ -79,7 +79,7 @@ class ColumnsTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         v0 = tb.data['sum(A)'][0]
         v1 = tb.data['sum(A)'][1]
@@ -121,7 +121,7 @@ class ColumnsTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         col0 = tb.data['sum(A)_0']
         col1 = tb.data['sum(A)_win3']
@@ -163,7 +163,7 @@ class ColumnsTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         col0 = tb.data['A_sum']
         col1 = tb.data['A_mean']
@@ -206,7 +206,7 @@ class ColumnsTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         self.assertAlmostEqual(tb.data['next(A)'][0], 2.0)
         self.assertAlmostEqual(tb.data['next(A)'][1], 3.0)
@@ -242,7 +242,7 @@ class ColumnsTestCase(unittest.TestCase):
         tb = wf.tables[0]
         tb.data = df
 
-        tb.execute()
+        tb.populate()
 
         v0 = tb.data['mean_w(A)'][0]
         v1 = tb.data['mean_w(A)'][1]
