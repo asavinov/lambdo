@@ -60,15 +60,26 @@ class Table:
         #
         # Apply an appropriate population function depending on the operation (definition) type. Currently on function-based definition
         #
-        new_data = self.populate_function()
-        if new_data is not None:
-            self.data = new_data
+        operation = self.table_json.get('operation')
+        if not operation:  # Default
+            operation = 'all'
 
-        #
-        # Add derived columns (evaluate)
-        #
-        for i, col in enumerate(self.columns):
-            col.evaluate()
+        if operation == 'all':
+            new_data = self._populate_function()
+            if new_data is not None:
+                self.data = new_data
+        else:
+            log.warning("Unknown operation type '{0}' in definition of table {self.id}".format(operation))
+
+        log.info("<=== Finish populating table '{0}'".format(self.id))
+
+    def filter(self):
+        """
+        Apply filters for post-processing after the table and all its columns have been evaluated.
+        It is a kind of a convenience approach where we define filters directly in the table without defining a new table.
+        All other elements which depend on this table, will see the filtered result table.
+        Therefore, in general, we need to apply filters before any element which depends on this table.
+        """
 
         #
         # Row filter
@@ -98,9 +109,7 @@ class Table:
             if include_columns:
                 self.data = self.data[include_columns]
 
-        log.info("<=== Finish populating table '{0}'".format(self.id))
-
-    def populate_function(self):
+    def _populate_function(self):
         """
         This operation type uses the provided UDF, model and inputs to populate this table.
         """

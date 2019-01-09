@@ -69,7 +69,16 @@ class Workflow:
 
         # Currently we populate all tables sequentially and each population automatically evaluates all the table columns
         for i, tab in enumerate(self.tables):
+
+            # Add records to the table
             tab.populate()
+
+            # Evaluate all columns of the table
+            for i, col in enumerate(tab.columns):
+                col.evaluate()
+
+            # Post-processs the table
+            tab.filter()
 
         # TODO: Build topology as a graph of mixed table population and column evaluation operations according to their depednecies
         # TODO: Execute operations in the topology by either populating a table or evaluating a column

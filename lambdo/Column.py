@@ -79,6 +79,17 @@ class Column:
         # Essentially, we evaluate several columns independently
         for i, definition in enumerate(concrete_definitions):
 
+            window = definition.get('window')
+
+            operation = definition.get('operation')
+            if not operation:  # Default
+                if window is None or window == 'one' or window == '1':
+                    operation = 'calculate'  # Default
+                elif window == 'all':
+                    operation = 'all'
+                else:
+                    operation = 'roll'
+
             #
             # Stage 3. Resolve the function
             #
@@ -91,8 +102,6 @@ class Column:
             if not func:
                 log.warning("Cannot resolve user-defined function '{0}'. Skip column definition.".format(func_name))
                 break
-
-            window = definition.get('window')
 
             #
             # Stage 4. Prepare input data argument to pass to the function (as the first argument)
