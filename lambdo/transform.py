@@ -7,8 +7,9 @@ import logging
 log = logging.getLogger('TRANSFORM')
 
 
-def transform(func, window, data, data_type, model, model_type):
+def transform(func, window, data, data_type, model):
     """
+    DEPRECATED.
     Apply the specified transformation to the data by producing new column.
     :return: None. The generated columns will be added to the input data frame.
     """

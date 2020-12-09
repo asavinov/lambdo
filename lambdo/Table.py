@@ -31,6 +31,7 @@ class Table:
         # TODO: Data represents the whole populated set and is a pandas index without columns (while columns are represented separately in columns using row ids as index)
         self.data = None
 
+        # Assign id
         self.id = self.table_json.get('id', None)
         if self.id is None:
             self.id = "___table___" + str(self.tableNo)
@@ -39,13 +40,61 @@ class Table:
 
         # Create column objects
         columns_json = self.table_json.get("columns", [])
-        self.columns = self.create_columns()
+        self.columns = self._create_columns_from_descriptions()
 
-    def create_columns(self):
-        """Create a list of Column objects from json."""
+    def _create_columns_from_descriptions(self):
+        """
+        Create a list of Column objects from json.
+        Note that the list of json column definitions may include columns with extensions where each extension is used to create a column.
+        """
         columns_json = self.table_json.get("columns", [])
-        columns = [Column(self,x) for x in columns_json]
+        columns = []
+        for family_col_json in columns_json:
+            # One column definition may have extensions and hence we will get a list of concrete column definitions
+            columns_json = build_json_extensions(family_col_json)
+
+            for col_json in columns_json:
+                col = Column(self, col_json)
+                columns.append(col)
+
         return columns
+
+    def create_column(self, definition):
+        """
+        Create a new column object from its description provided in the argument.
+        The description is appended to the definition of the table (if it exists).
+        """
+
+        # Instantiate a column object and append it to the list of all columns
+        column = Column(self, definition)
+        self.columns.append(column)
+
+        # TODO: Append only if such a column (with the same id) does not exist yet
+        if self.table_json:
+            if self.table_json.get("columns") is None:
+                self.table_json["columns"] = []
+            self.table_json.get("columns").append(definition)
+
+        return column
+
+    def get_column(self, column_name):
+        """Find a column definition object with the specified name"""
+        if not column_name: return None
+        return next((x for x in self.columns if x.id == column_name), None)
+
+    def get_column_number(self, column_name):
+        """Find column definition number with this name"""
+        return next((i for i, x in enumerate(self.columns) if x.id == column_name), -1)
+
+    def get_columns(self, column_names):
+        """Find column definitions with the specified names"""
+        if not column_names: return None
+        columns = filter(lambda x: x.id in column_names, self.columns)
+        return list(columns)
+
+    #
+    # Data operations
+    #
 
     def populate(self):
         """
@@ -111,7 +160,7 @@ class Table:
 
     def _populate_function(self):
         """
-        This operation type uses the provided UDF, model and inputs to populate this table.
+        This operation type uses the provided UDF, model and inputs to fully populate this table.
         """
         #
         # Stage 1. Resolve the function

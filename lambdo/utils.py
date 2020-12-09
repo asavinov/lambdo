@@ -9,6 +9,32 @@ import pandas as pd
 import logging
 log = logging.getLogger('UTILS')
 
+
+def build_json_extensions(definition_json):
+    """
+    Produce all concrete definitions by imposing extensions onto the base definition.
+    Extensions produced are copies.
+    :return: List of concrete definitions. In the case of no extensions, only the base definition is returned.
+    """
+    base = definition_json.copy()
+    exts = definition_json.get('extensions')
+
+    if not exts: return [base]  # No extensions
+
+    result = []
+    for i, ext in enumerate(exts):
+        e = {**base, **ext}
+        e = dict(e)  # Make copy
+        del e['extensions']  # Remove extensions
+
+        # Generate id if not explicitly specified
+        if not ext.get('id'):
+            e['id'] = e['id'] + "_" + str(i)
+
+        result.append(e)
+
+    return result
+
 def is_valid_uri(uri):
     """Determine if the string is a valid URL. We use it to distringuish links from workflow variables."""
     try:

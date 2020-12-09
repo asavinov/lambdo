@@ -42,13 +42,40 @@ class Workflow:
         #
         # Create table objects
         #
-        self.tables = self.create_tables()
+        self.tables = self._create_tables_from_descriptions()
 
-    def create_tables(self):
-        """Create a list of Table objects from json."""
+    def _create_tables_from_descriptions(self):
+        """Create a list of Table objects by using their definitions in the workflow json."""
         tables_json = self.workflow_json.get("tables", [])
         tables = [Table(self,x) for x in tables_json]
         return tables
+
+    def create_table(self, definition):
+        """
+        Create a new table object from its description provided in the argument.
+        The description is appended to the definition of the workflow (if it exists).
+        """
+
+        # Instantiate a table object and append it to the list of all tables
+        table = Table(self, definition)
+        self.tables.append(table)
+
+        # TODO: Append only if such a table (with the same id) does not exist yet
+        if self.workflow_json:
+            if self.workflow_json.get("tables") is None:
+                self.workflow_json["tables"] = []
+            self.workflow_json.get("tables").append(definition)
+
+        return table
+
+    def get_table(self, table_name):
+        """Find a table object with the specified name"""
+        if not table_name: return None
+        return next((x for x in self.tables if x.id == table_name), None)
+
+    def get_table_number(self, table_name):
+        """Find table number within this workflow"""
+        return next((i for i, x in enumerate(self.tables) if x.id == table_name), -1)
 
     def get_tables(self, table_names):
         """Find tables with the specified names"""
@@ -56,9 +83,9 @@ class Workflow:
         tables = filter(lambda x: x.id in table_names, self.tables)
         return list(tables)
 
-    def get_table_number(self, table_name):
-        """Find table number in the list"""
-        return next(i for i, x in enumerate(self.tables) if x.id == table_name)
+    #
+    # Data operations
+    #
 
     def execute(self):
         """
