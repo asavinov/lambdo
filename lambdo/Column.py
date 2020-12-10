@@ -49,17 +49,20 @@ class Column:
         """
         definition = self.column_json
 
-        window = definition.get('window')
-
         operation = definition.get('operation')
-        if not operation:  # If not specified explicitly then determine from parameters
-            # Different operations use different parameters, particularly, window
-            if window is None or window == 'one' or window == '1':
-                operation = 'calculate'
-            elif window == 'all':
-                operation = 'all'
-            else:
-                operation = 'roll'
+        if operation is not None:
+            return operation
+
+        # If operation is not specified explicitly then determine from parameters
+
+        window = definition.get('window')
+        if window is None or window == 'one' or window == '1':
+            operation = 'calculate'
+        elif window == 'all':
+            operation = 'all'
+        else:
+            operation = 'roll'
+
         return operation
 
     #
@@ -79,6 +82,11 @@ class Column:
         # Determine operation type, that is, how the column will be generated
         #
         operation = self._get_operation_type()
+
+        # Link columns use their own definition schema different from computaional (functional) definitions
+        if operation == 'link':
+            out = self._evaluate_link()
+            return
 
         #
         # Stage 3. Resolve the function
@@ -210,7 +218,7 @@ class Column:
 
     def _evaluate_all(self, func, data, data_type, model):
         """
-        All column definition. Apply function to all inputs and return its output(s).
+        All column evaluation. Apply function to all inputs and return its output(s).
         """
 
         #
@@ -236,7 +244,7 @@ class Column:
 
     def _evaluate_calculate(self, func, data, data_type, model):
         """
-        Calculate column definition. Apply function to each row of the table.
+        Calculate column evaluation. Apply function to each row of the table.
         """
 
         #
@@ -273,13 +281,14 @@ class Column:
 
     def _evaluate_roll(self, func, data, data_type, model):
         """
-        Roll column definition. Apply function to each window of the table.
+        Roll column evaluation. Apply function to each window of the table.
         """
+
+        definition = self.column_json
 
         #
         # Determine window size. The window parameter can be string, number or object (many arguments for rolling object)
         #
-        definition = self.column_json
         window = definition.get('window')
         window_size = int(window)
         rolling_args = {'window': window_size}
@@ -321,6 +330,92 @@ class Column:
             out = idx_window.apply(lambda x: window_fn(x, func))
 
         return out
+
+    def _evaluate_link(self):
+        """
+        Link column evaluation. Generate a column with row ids of the target table.
+        """
+
+        #
+        # Read and validate parameters
+        #
+
+        column_name = self.id
+
+        definition = self.column_json
+
+        main_table = self.table
+
+        main_keys = definition.get('keys', [])
+        if not all_columns_exist(main_keys, main_table.data):
+            log.error("Not all key columns available in the link column definition.".format())
+            return
+
+        linked_table = definition.get('linked_table', '')
+        linked_table = self.table.workflow.get_table(linked_table)
+        if not linked_table:
+            log.error("Linked table '{0}' cannot be found in the link column definition..".format(linked_table))
+            return
+
+        linked_keys = definition.get('linked_keys', [])
+        if not all_columns_exist(linked_keys, linked_table.data):
+            log.error("Not all linked key columns available in the link column definition.".format())
+            return
+
+        #
+        # 1. Create a column with index values in the target table with the name of the link column.
+        #
+        """
+        INFO:
+        df['index1'] = df.index  # Copy
+        # Use df.reset_index for converting existing index to a column. After that, we AGAIN create an index.
+        # The goal is to preserve the old index even if it is not a continuous range
+        df.reset_index().set_index('index', drop=False)
+        # Or
+        df.reset_index(inplace=True)
+        df.set_index('index', drop=False, inplace=True)
+        # Or
+        df = df.rename_axis('index1').reset_index() # New index1 column will be created
+        """
+
+        index_column_name = '__row_id__' # It could be 'id', 'index' or whatever other convention
+        linked_table.data[index_column_name] = linked_table.data.index
+
+        #
+        # 2. Create left join on the specified keys
+        #
+
+        linked_prefix = column_name+'::'  # It will prepended to each linked (secondary) column name
+
+        out_df = pd.merge(
+            main_table.data,  # This table
+            linked_table.data.rename(columns=lambda x: linked_prefix+x, inplace=False),  # Target table to link to. We rename columns (not in place - the origina frame preserves column names)
+            how='left',  # This (main) table is not changed - we attach target records
+            left_on=main_keys,  # List of main table key columns
+            right_on= [linked_prefix+x for x in linked_keys],  # List of target table key columns. We add our suffix
+            left_index=False,
+            right_index=False,
+            #suffixes=('', linked_suffix),  # We do not use suffixes because they cannot be enforced (they are used only in the case of equal column names)
+            sort=False  # Sorting decreases performance
+        )
+        # Here we get linked column names like 'Prefix::OriginalName'
+
+        #
+        # 3. Rename according to our convention and store the result
+        #
+
+        # Rename our link column by using only specified column name
+        out_df.rename({column_name+'::'+index_column_name: column_name}, axis='columns', inplace=True)
+
+        # Store column with target row ids by attaching it to this table df
+        out_column = out_df[column_name]
+        self.data = out_column
+
+        # Store the result df with all target column (in the case they are used in other definitions)
+        main_table.data = out_df
+        # ??? If the result df includes all columns of this df, then why not to simply replace this df by the new df?
+        # ??? What if this df already has some linked (tareget) columns from another table attached before?
+        # ??? What if the target table already has linked (target) columns from its own target table (recursive)?
 
     def prepare_model(self, definition, inputs):
         """

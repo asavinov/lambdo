@@ -15,10 +15,10 @@ log = logging.getLogger('STD')
 def join(dfs, **model):
     """
     Use the first table as the main table and join all other tables using the specified model
-    The model includes key to use for join (row numbers by default) and prefix/suffix used for column names added to the first table.
+    The model includes keys to use for join (row numbers by default) and prefix/suffix used for column names added to the first table.
     """
 
-    # Data is a list of data frames. The first frame is a basis - all other frames will be attached to it
+    # Data is a list of data frames. The first frame is a basis - all other frames will be linked to it
     main_df = dfs[0]
     secondary_dfs = dfs[1:]
 
@@ -47,7 +47,7 @@ def join(dfs, **model):
         right_suffix = right_suffixes[i] if i < len(right_suffixes) else None
 
         # Do join
-        main_df = pd.merge(main_df, df, how='left', left_on=left_on, right_on=right_on, left_index=left_index, right_index=right_index, suffixes=[main_suffix,right_suffix])
+        main_df = pd.merge(main_df, df, how='left', left_on=left_on, right_on=right_on, left_index=left_index, right_index=right_index, suffixes=[main_suffix,right_suffix], sort=False)
 
         # We always drop the second key columns because it stores identical data
         if left_on and right_on:

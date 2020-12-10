@@ -90,7 +90,7 @@ class JoinTestCase(unittest.TestCase):
         main_tb = wf.tables[0]
         main_tb.data = df
 
-        # Secondary table (more data than required by the main table)
+        # Secondary table (more data than used in the main table)
         data = {'B': ['a', 'b', 'c'], 'C': [1, 2, 3]}
         df = pd.DataFrame(data)
         sec_tb = wf.tables[1]
@@ -100,8 +100,8 @@ class JoinTestCase(unittest.TestCase):
 
         merged_tb = wf.tables[2]
 
-        self.assertEqual(len(merged_tb.data.columns), 2)
         self.assertEqual(len(merged_tb.data), 4)
+        self.assertEqual(len(merged_tb.data.columns), 2)
 
 
 if __name__ == '__main__':
