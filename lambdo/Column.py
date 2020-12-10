@@ -31,7 +31,8 @@ class Column:
         self.column_json = column_json
 
         # TODO: Data represents the whole function and is a pandas series with index as row ids of the table data
-        self.data = None
+        self.data = []  # It is a list because one column definition may generate many column data objects
+        self.groupby = None  # Link columns store here a groupby objects which is then (re)used by multiple aggregate columns
 
         # Assign id
         self.id = self.column_json.get('id', None)
@@ -86,10 +87,11 @@ class Column:
         # Link columns use their own definition schema different from computaional (functional) definitions
         if operation == 'link':
             out = self._evaluate_link()
+            self.data.append(out)
             return
 
         #
-        # Stage 3. Resolve the function
+        # Resolve the function
         #
         func_name = definition.get('function')
         if not func_name:
@@ -102,55 +104,58 @@ class Column:
             return
 
         #
-        # Stage 4. Prepare input data argument to pass to the function (as the first argument)
+        # Prepare model object to pass to the function (as the second argument)
         #
-        table = self.table.data  # Table the columns will be added to
 
-        data = table
-
-        inputs = definition.get('inputs', [])
-        inputs = get_columns(inputs, data)
-        if inputs is None:
-            log.warning("Error reading column list. Skip column definition.")
-            return
-
-        # Validation: check if all explicitly specified columns available
-        if not all_columns_exist(inputs, data):
-            log.warning("Not all columns available. Skip column definition.".format())
-            return
-
-        # Select only the specified input columns
-        data = data[inputs]
-
-        data_type = definition.get('data_type')
-
-        #
-        # Stage 5. Prepare model object to pass to the function (as the second argument)
-        #
         # Model is an arbitrary object.
         # It can be specified by-value as dict.
         # It can be a new instance of the specified class created using the specified constructor parameters.
         # Or it can be returned y the provided (training) procedure which
         # We pass inputs because 1) they are already prepared 2) we might need them for training
-        model = self.prepare_model(definition, inputs)
+        model = self.prepare_model(definition)
         if model is None:
             return
 
-        #
-        # Stage 6. Evaluate column depending on the operation type
-        #
-        if operation == 'all':
-            out = self._evaluate_all(func, data, data_type, model)
-        elif operation == 'calculate':
-            out = self._evaluate_calculate(func, data, data_type, model)
-        elif operation == 'roll':
-            out = self._evaluate_roll(func, data, data_type, model)
-        else:
-            log.warning("Unknown operation '{0}'. Skip column definition.".format(operation))
-            return
+        if operation == 'aggregate':  # Aggregate functions consume facts from another table
+
+            out = self._evaluate_aggregate(func, model)
+
+        else:  # Compuate functions consume this table records
+            #
+            # Prepare input data argument to pass to the function (as the first argument)
+            #
+            data = self.table.data
+
+            inputs = definition.get('inputs', [])
+            inputs = get_columns(inputs, data)
+            if inputs is None:
+                log.warning("Error reading column list. Skip column definition.")
+                return
+
+            # Validation: check if all explicitly specified columns available
+            if not all_columns_exist(inputs, data):
+                log.warning("Not all columns available. Skip column definition.".format())
+                return
+
+            data = data[inputs]  # Select only the specified input columns
+
+            data_type = definition.get('data_type')
+
+            #
+            # Evaluate column depending on the operation type
+            #
+            if operation == 'all':
+                out = self._evaluate_all(func, data, data_type, model)
+            elif operation == 'calculate':
+                out = self._evaluate_calculate(func, data, data_type, model)
+            elif operation == 'roll':
+                out = self._evaluate_roll(func, data, data_type, model)
+            else:
+                log.warning("Unknown operation '{0}'. Skip column definition.".format(operation))
+                return
 
         #
-        # Stage 7. Post-process the result by renaming the output columns accordingly (some convention is needed to know what output to expect)
+        # Post-process the result by renaming the output columns accordingly (some convention is needed to know what output to expect)
         #
 
         # 1)
@@ -192,7 +197,6 @@ class Column:
         # Note that it is an essential feature, because some complex procedures generate several columns and we cannot solve this problem using wrappers.
         # If it a list-like array of results then we need to be able to convert it to individual Series to be added to the table.
 
-
         outputs = definition.get('outputs', [])
         if isinstance(outputs, str):  # If a single name is provided (not a list), then we wrap into a list
             outputs = [outputs]
@@ -205,14 +209,28 @@ class Column:
         # Note that works for only one output (if multiple then we need a list of result pahts/methods/functions)
         # Therefore, a list of paths/methods/functions can be provided along with a list of outputs/ids while the result is spposed to be one object.
 
+        fillna_value = definition.get('fillna_value')
+
         # TODO: The result can be Series/listndarray(1d or 2d) and we need to convert it to DataFrame by using the original index.
-        out = pd.DataFrame(out)  # Result can be ndarray
+        out = pd.DataFrame(out)  # Result can be ndarray so we convert to data frame
         for i, c in enumerate(out.columns):
+
+            # Determine column name for this result
             if outputs and i < len(outputs):  # Explicitly specified output column name
-                n = outputs[i]
+                attached_column_name = outputs[i]
             else:  # Same name - overwrite input column
-                n = inputs[i]
-            table[n] = out[c]  # A column is attached by matching indexes so indexes have to be consistent (the same)
+                attached_column_name = inputs[i]
+
+            #
+            # Attach this new column name to the table data frame
+            #
+            self.table.data[attached_column_name] = out[c]  # A column is attached by matching indexes so indexes have to be consistent (the same)
+
+            self.data.append(self.table.data[attached_column_name])  # Note that a column definition may generate many column objects
+
+            if fillna_value is not None:
+                self.table.data[attached_column_name].fillna(fillna_value, inplace=True)
+
 
         log.info("<--- Finish evaluating column '{0}'".format(self.id))
 
@@ -331,6 +349,63 @@ class Column:
 
         return out
 
+    def _evaluate_aggregate(self, func, model):
+        """
+        Aggregate column evaluation. Apply function to each group of the fact table.
+        """
+
+        definition = self.column_json
+
+        #
+        # Get parameters
+        #
+
+        fact_table_name = definition.get('fact_table')
+        fact_table = self.table.workflow.get_table(fact_table_name)
+        if fact_table is None:
+            log.error("Cannot find the fact table '{0}'.".format(fact_table_name))
+            return
+
+        group_column_name = definition.get('group_column')
+        group_column = fact_table.get_column(group_column_name)
+        if group_column is None:
+            log.error("Cannot find the group column '{0}'.".format(group_column_name))
+            return
+
+        #
+        # Build input fact frame to pass to the function
+        #
+        data = fact_table.data
+
+        inputs = definition.get('inputs', [])
+        inputs = get_columns(inputs, data)
+        if inputs is None:
+            log.warning("Error reading column list. Skip column definition.")
+            return
+
+        # Validation: check if all explicitly specified columns available
+        if not all_columns_exist(inputs, data):
+            log.warning("Not all columns available. Skip column definition.".format())
+            return
+
+        data = data[inputs]  # Select only the specified input columns
+
+        data_type = definition.get('data_type')
+
+        #
+        # Retrieve or build a groupby object for the link column used for grouping
+        #
+        gb = group_column._get_groupby()
+
+        if len(inputs) == 0:  # Special case: no input columns (or function is size()
+            out = gb.size()
+        if len(inputs) == 1:  # Single input: udf will get a sub-series with fact values
+            out = gb[inputs[0]].agg(func, **model)  # Apply function to all groups
+        else:  # Multiple inputs. Function will get a sub-dataframe as a data argument
+            pass
+
+        return out
+
     def _evaluate_link(self):
         """
         Link column evaluation. Generate a column with row ids of the target table.
@@ -407,22 +482,52 @@ class Column:
         # Rename our link column by using only specified column name
         out_df.rename({column_name+'::'+index_column_name: column_name}, axis='columns', inplace=True)
 
-        # Store column with target row ids by attaching it to this table df
-        out_column = out_df[column_name]
-        self.data = out_column
-
         # Store the result df with all target column (in the case they are used in other definitions)
         main_table.data = out_df
         # ??? If the result df includes all columns of this df, then why not to simply replace this df by the new df?
         # ??? What if this df already has some linked (tareget) columns from another table attached before?
         # ??? What if the target table already has linked (target) columns from its own target table (recursive)?
 
-    def prepare_model(self, definition, inputs):
+        out = out_df[column_name]
+
+        return out
+
+    def _get_groupby(self):
+        """Return a pandas groupby object for the link column. If it is not present then it is returned."""
+
+        definition = self.column_json
+
+        if self.groupby is not None:
+            return self.groupby
+
+        main_table = self.table
+        column_name = self.id
+        main_keys = definition.get('keys', [])
+        linked_keys = definition.get('linked_keys', [])
+
+        # Use link column (with target row ids) to build a groupby object (it will build a group for each target row id)
+        try:
+            gb = main_table.data.groupby(column_name, as_index=True)
+            # Alternatively, we could use target keys or main keys
+        except Exception as e:
+            log.error("Error grouping input table using the specified column(s).".format())
+            log.debug(e)
+            raise e
+
+        # TODO: We might want to remove a group for null value (if it is created by the groupby constructor)
+
+        self.groupby = gb
+
+        return gb
+
+    def prepare_model(self, definition):
         """
         Prepare model object to pass to the function (as the second argument)
         It can be necessary to instantiate the argument object by using the specified class
         It can be necessary to generate (train) a model (we need some specific logic to determine such a need)
         """
+
+        inputs = definition.get('inputs', [])
 
         model_ref = definition.get('model')
         model_type = definition.get('model_type')

@@ -54,11 +54,11 @@ class LinkTestCase(unittest.TestCase):
         self.assertEqual(len(merged_tb.data), 4)  # Same number of rows
         self.assertEqual(len(merged_tb.data.columns), 4)  # We add all linked columns plus the new link column itself
 
-        link_column = main_tb.get_column('My Link')
-        self.assertEqual(link_column.data[0], 0)
-        self.assertEqual(link_column.data[1], 0)
-        self.assertEqual(link_column.data[2], 1)
-        self.assertEqual(link_column.data[3], 1)
+        link_column = main_tb.data['My Link']
+        self.assertEqual(link_column[0], 0)
+        self.assertEqual(link_column[1], 0)
+        self.assertEqual(link_column[2], 1)
+        self.assertEqual(link_column[3], 1)
 
     def test_two_keys(self):
 
@@ -107,11 +107,11 @@ class LinkTestCase(unittest.TestCase):
         self.assertEqual(len(merged_tb.data), 4)  # Same number of rows
         self.assertEqual(len(merged_tb.data.columns), 6)  # We add all linked columns plus the new link column itself
 
-        link_column = main_tb.get_column('My Link')
-        self.assertEqual(link_column.data[0], 0)
-        self.assertEqual(link_column.data[1], 1)
-        self.assertEqual(link_column.data[2], 1)
-        self.assertTrue(pd.isna(link_column.data[3]))
+        link_column = main_tb.data['My Link']
+        self.assertEqual(link_column[0], 0)
+        self.assertEqual(link_column[1], 1)
+        self.assertEqual(link_column[2], 1)
+        self.assertTrue(pd.isna(link_column[3]))
 
 
 if __name__ == '__main__':
