@@ -36,11 +36,11 @@ class ResolveTestCase(unittest.TestCase):
         self.assertEqual(type(ff).__name__, 'type')
         self.assertTrue(inspect.isclass(ff))
 
-        ff = resolve_full_name('numpy.core.fromnumeric:sum')
+        ff = resolve_full_name('numpy:sum')
         self.assertIsNotNone(ff)
         self.assertEqual(ff.__name__, 'sum')
         self.assertEqual(ff.__qualname__, 'sum')
-        self.assertEqual(ff.__module__, 'numpy.core.fromnumeric')
+        self.assertEqual(ff.__module__, 'numpy')
         self.assertEqual(type(ff).__name__, 'function')
         self.assertTrue(inspect.isfunction(ff))
 
