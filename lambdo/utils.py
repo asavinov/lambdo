@@ -7,7 +7,7 @@ import urllib.parse
 import pandas as pd
 
 import logging
-log = logging.getLogger('UTILS')
+log = logging.getLogger('lambdo.utils')
 
 
 def build_json_extensions(definition_json):

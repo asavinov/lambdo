@@ -11,7 +11,7 @@ from lambdo.Table import *
 from lambdo.Column import *
 
 import logging
-log = logging.getLogger('TOPOLOGY')
+log = logging.getLogger('lambdo.topology')
 
 
 class Topology:
@@ -22,7 +22,7 @@ class Topology:
 
     workflowNo = 0
 
-    def __init__(self, workflow: Workflow):
+    def __init__(self, workflow):
 
         self.workflow = workflow
 
@@ -40,11 +40,11 @@ class Topology:
         # Topology to be built is a list of layers in the order of execution of their operations. First layer does not have dependencies.
         layers = []
 
-        # Create a collection of all definitions specified in the workflow
+        # Create a collection of all operations defined in the workflow
         all = []
         for t in self.workflow.tables:
-            all.append(t)
-            all.extend(t.columns)
+            table_deps = t.get_all_own_dependencies()
+            all.extend(table_deps)
 
         # Empty collection of already processed elements (they can be simultaniously removed from all)
         done = []

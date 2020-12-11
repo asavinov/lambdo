@@ -31,6 +31,7 @@ class LinkTestCase(unittest.TestCase):
                 },
                 {
                     "id": "Table 2",
+                    "operation": "noop",
                     "columns": [
                     ]
                 }
@@ -84,6 +85,7 @@ class LinkTestCase(unittest.TestCase):
                 },
                 {
                     "id": "Table 2",
+                    "operation": "noop",
                     "columns": [
                     ]
                 }

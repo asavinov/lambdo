@@ -58,7 +58,7 @@ class TableAggregateTestCase(unittest.TestCase):
                 },
                 {
                     "id": "Group Table",
-                    "function": "lambdo.std:aggregate",
+                    "function": "lambdo.std:aggregate",  # "operation": "aggregate"
                     "inputs": ["Fact Table"],
                     "model": {
                         "keys": ["A"],

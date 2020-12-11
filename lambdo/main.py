@@ -11,7 +11,7 @@ from lambdo.Workflow import *
 from lambdo.version import *
 
 import logging
-log = logging.getLogger('MAIN')
+log = logging.getLogger('lambdo')
 
 
 def run(workflow_file):

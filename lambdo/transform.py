@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 import logging
-log = logging.getLogger('TRANSFORM')
+log = logging.getLogger('lambdo.transform')
 
 
 def transform(func, window, data, data_type, model):

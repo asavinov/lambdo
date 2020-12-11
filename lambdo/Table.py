@@ -11,7 +11,7 @@ from lambdo.Table import *
 from lambdo.Column import *
 
 import logging
-log = logging.getLogger('TABLE')
+log = logging.getLogger('lambdo.table')
 
 
 class Table:
@@ -106,6 +106,28 @@ class Table:
 
         return list(set(ret))
 
+    def is_op_noop(self):
+        operation = self.table_json.get('operation')
+        if operation == 'noop':
+            return True
+        function = self.table_json.get('function')
+        this_table_no = self.workflow.get_table_number(self.id)
+        # No function specified and no parent table
+        if not function and this_table_no == 0:
+            return True
+        return False
+
+    def is_op_extend(self):
+        operation = self.table_json.get('operation')
+        if operation == 'extend':
+            return True
+        function = self.table_json.get('function')
+        this_table_no = self.workflow.get_table_number(self.id)
+        # No function specified and there exists previous table
+        if not function and this_table_no > 0:
+            return True
+        return False
+
     def is_op_all(self):
         operation = self.table_json.get('operation')
         if operation == 'all':
@@ -131,15 +153,34 @@ class Table:
         operation = self.table_json.get('operation')
         if operation == 'join':
             return True
-        # TODO: Check standard function name
+        function = self.table_json.get('function')
+        if function and function == 'lambdo.std:join':
+            return True
         return False
 
     def is_op_aggregate(self):
         operation = self.table_json.get('operation')
         if operation == 'aggregate':
             return True
-        # TODO: Check standard function name
+        function = self.table_json.get('function')
+        if function and function == 'lambdo.std:aggregate':
+            return True
         return False
+
+    def get_all_own_dependencies(self):
+        """
+        Return a list of definitions within this table which have to be executed in order to consider this table completed.
+        This list includes this table (which means all its attributes), all derived columns, row filters, column filters etc.
+        This method is used from other definitions which must work only with a completely generated tables.
+        """
+        dependencies = []
+
+        dependencies.append(self)
+        dependencies.extend(self.columns)
+
+        # TODO: Add row filters and column filters
+
+        return dependencies
 
     def get_dependencies(self):
         """
@@ -150,9 +191,26 @@ class Table:
         definition = self.table_json
         dependencies = []
 
-        if self.is_op_all():
-            # A function (all) table does not depend on any other table.
-            # TODO: In future, a function should be given a list of some declared input tables which are treated its dependencies, and the function returns one or more output tables
+        if self.is_op_noop():
+            pass
+
+        elif self.is_op_extend():
+            # An extended table depends on its base table (which has to be fully generated)
+            this_table_no = self.workflow.get_table_number(self.id)
+            parent_table = self.workflow.tables[this_table_no - 1]
+            dependencies.extend(parent_table.get_all_own_dependencies())
+
+        elif self.is_op_join():
+            # A join table depends on its source tables
+            inputs = definition.get('inputs', [])
+            source_tables = self.workflow.get_tables(inputs)
+
+            # We assume that the source tables have to be completely generated and hence include ALL their dependencies
+            for source_table in source_tables:
+                dependencies.extend(source_table.get_all_own_dependencies())
+
+        elif self.is_op_aggregate():
+            # TODO: An aggregate table depends on its source (fact) table and its measures and its link/grouping column.
             pass
 
         elif self.is_op_project():
@@ -169,16 +227,14 @@ class Table:
             # TODO: A product table (including project tables and filter table) depends on its domain tables which have to be populated before because their ids will be used in this table attributes.
             pass
 
-        elif self.is_op_join():
-            # TODO: A join table depends on its source tables as well as (probably) their columns which will be joined
-            pass
-
-        elif self.is_op_aggregate():
-            # TODO: An aggregate table depends on its source (fact) table and its measures and its link/grouping column.
+        elif self.is_op_all():
+            # A function (all) table does not depend on any other table.
+            # TODO: In future, a function should be given a list of some declared input tables which are treated its dependencies, and the function returns one or more output tables
             pass
 
         else:
-            return []
+            # TODO: Error: unknown operation type
+            pass
 
         return dependencies
 

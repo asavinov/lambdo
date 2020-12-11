@@ -31,6 +31,7 @@ class AggregateTestCase(unittest.TestCase):
                 },
                 {
                     "id": "Groups",
+                    "operation": "noop",
                     "columns": [
                         {
                             "id": "Aggregate",

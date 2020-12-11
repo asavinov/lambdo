@@ -11,7 +11,7 @@ from lambdo.Table import *
 from lambdo.Column import *
 
 import logging
-log = logging.getLogger('COLUMN')
+log = logging.getLogger('lambdo.column')
 
 
 class Column:
@@ -84,14 +84,25 @@ class Column:
         # If operation is not specified explicitly then determine from parameters
 
         window = definition.get('window')
-        if window is None or window == 'one' or window == '1':
-            operation = 'calculate'
-        elif window == 'all':
-            operation = 'all'
+        if window:
+            if window == 'one' or window == '1':
+                operation = 'calculate'
+            elif window == 'all':
+                operation = 'all'
+            else:
+                operation = 'roll'
         else:
-            operation = 'roll'
+            function = self.column_json.get('function')
+            if not function:
+                return 'noop'  # No window, no function
 
         return operation
+
+    def is_op_noop(self):
+        operation = self.column_json.get('operation')
+        if operation == 'noop':
+            return True
+        return False
 
     def is_op_one(self):
         operation = self._get_operation_type()

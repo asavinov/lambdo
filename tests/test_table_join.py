@@ -75,7 +75,7 @@ class TableJoinTestCase(unittest.TestCase):
                 },
                 {
                     "id": "Merged Table",
-                    "function": "lambdo.std:join",
+                    "function": "lambdo.std:join",  # "operation": "join"
                     "inputs": ["Main Table", "Second Table"],
                     "model": {"keys": ["A", "B"]}
                 }

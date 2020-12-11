@@ -10,7 +10,7 @@ from lambdo.utils import *
 from lambdo.resolve import *
 
 import logging
-log = logging.getLogger('STD')
+log = logging.getLogger('lambdo.std')
 
 def join(dfs, **model):
     """

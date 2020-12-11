@@ -8,7 +8,7 @@ import importlib
 import importlib.util
 
 import logging
-log = logging.getLogger('RESOLVE')
+log = logging.getLogger('lambdo.resolve')
 
 
 def resolve_full_name(full_name: str):

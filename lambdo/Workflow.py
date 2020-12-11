@@ -9,9 +9,10 @@ from lambdo.transform import *
 from lambdo.Workflow import *
 from lambdo.Table import *
 from lambdo.Column import *
+from lambdo.Topology import *
 
 import logging
-log = logging.getLogger('WORKFLOW')
+log = logging.getLogger('lambdo.workflow')
 
 
 class Workflow:
@@ -94,20 +95,16 @@ class Workflow:
         """
         log.info("Start executing workflow '{0}'.".format(self.id))
 
-        # TODO: Use topology for determining the sequence of operations on workflow elements (instead of the current approach)
-
-        # Currently we populate all tables sequentially and each population automatically evaluates all the table columns
-        for i, tab in enumerate(self.tables):
-
-            # Add records to the table
-            tab.populate()
-
-            # Evaluate all columns of the table
-            for i, col in enumerate(tab.columns):
-                col.evaluate()
-
-            # Post-process the table
-            tab.filter()
+        topology = Topology(self)
+        for layer in topology.layers:
+            # Execute operations in one layer
+            for elem in layer:
+                if isinstance(elem, Table):
+                    elem.populate()
+                elif isinstance(elem, Column):
+                    elem.evaluate()
+                else:
+                    pass
 
         log.info("Finish executing workflow '{0}'.".format(self.id))
 
