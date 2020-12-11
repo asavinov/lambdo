@@ -92,6 +92,96 @@ class Table:
         columns = filter(lambda x: x.id in column_names, self.columns)
         return list(columns)
 
+    def get_definitions_for_columns(self, column_names):
+        """Find column definition objects which generate the column objects with the specified name(s)."""
+
+        if isinstance(column_names, str):
+            column_names = [column_names]
+        column_names_set = set(column_names)
+
+        ret = []
+        for col in self.columns:  # For each existing definition, check if it generates at least one of the column names
+            if set(col.get_outputs()) & column_names_set:
+                ret.append(col)  # This definition generates some column specified in the argument
+
+        return list(set(ret))
+
+    def is_op_all(self):
+        operation = self.table_json.get('operation')
+        if operation == 'all':
+            return True
+        function = self.table_json.get('function')
+        if function:
+            return True
+        return False
+
+    def is_op_project(self):
+        operation = self.table_json.get('operation')
+        if operation == 'proj' or operation == 'project' or operation == 'projection':
+            return True
+        return False
+
+    def is_op_product(self):
+        operation = self.table_json.get('operation')
+        if operation == 'prod' or operation == 'product':
+            return True
+        return False
+
+    def is_op_join(self):
+        operation = self.table_json.get('operation')
+        if operation == 'join':
+            return True
+        # TODO: Check standard function name
+        return False
+
+    def is_op_aggregate(self):
+        operation = self.table_json.get('operation')
+        if operation == 'aggregate':
+            return True
+        # TODO: Check standard function name
+        return False
+
+    def get_dependencies(self):
+        """
+        Get tables and columns this table depends upon.
+        The returned elements must be executed before this element can be executed because this element consumes their data.
+        """
+
+        definition = self.table_json
+        dependencies = []
+
+        if self.is_op_all():
+            # A function (all) table does not depend on any other table.
+            # TODO: In future, a function should be given a list of some declared input tables which are treated its dependencies, and the function returns one or more output tables
+            pass
+
+        elif self.is_op_project():
+            # A project table depends on its source table(s)
+            source_table_name = definition.get('source_table')
+            source_table = self.workflow.get_table(source_table_name)
+            dependencies.append(source_table)
+
+            # The source table key columns
+            inputs = definition.get('inputs', [])
+            dependencies.extend(source_table.get_definitions_for_columns(inputs))
+
+        elif self.is_op_product():
+            # TODO: A product table (including project tables and filter table) depends on its domain tables which have to be populated before because their ids will be used in this table attributes.
+            pass
+
+        elif self.is_op_join():
+            # TODO: A join table depends on its source tables as well as (probably) their columns which will be joined
+            pass
+
+        elif self.is_op_aggregate():
+            # TODO: An aggregate table depends on its source (fact) table and its measures and its link/grouping column.
+            pass
+
+        else:
+            return []
+
+        return dependencies
+
     #
     # Data operations
     #
@@ -109,16 +199,17 @@ class Table:
         #
         # Apply an appropriate population function depending on the operation (definition) type. Currently on function-based definition
         #
-        operation = self.table_json.get('operation')
-        if not operation:  # Default
-            operation = 'all'
-
-        if operation == 'all':
-            new_data = self._populate_function()
-        elif operation == 'project':
+        if self.is_op_project():
             new_data = self._populate_project()
+        elif self.is_op_product():
+            log.error("Product operation is not implemented")
+        elif self.is_op_all():
+            new_data = self._populate_function()
         else:
-            log.warning("Unknown operation type '{0}' in definition of table {self.id}".format(operation))
+            # TODO: We need to introduce an operation which means that the data will be assigned using API from outside before evaluation
+            new_data = None
+            operation = self.table_json.get('operation')
+            #log.warning("Unknown operation type '{0}' in definition of table {1}".format(operation, self.id))
 
         if new_data is not None:
             self.data = new_data
@@ -240,7 +331,7 @@ class Table:
         df = df.groupby(by=['C1', 'C2', 'C3'], as_index=False).first()  # Using groupby
         np.unique(df[['col1', 'col2']], axis=0)  # Not for object data (error for object types)
         """
-        out = source_table.data.drop_duplicates(subset=inputs)
+        out = source_table.data.drop_duplicates(subset=inputs)  # Really do projection
         out = out[inputs]  # Leave only project columns (de-duplicate will return all source columns)
 
         out.reset_index(drop=True, inplace=True)

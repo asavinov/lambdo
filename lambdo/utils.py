@@ -115,11 +115,14 @@ def get_columns(names, df=None):
     if isinstance(names, str):  # A single column name
         result.append(names)
 
+    elif isinstance(names, int) and df is not None:  # A single column number
+        result.append(df.columns[names])
+
     elif isinstance(names, (list, tuple)):  # A list of column names
         for col in names:
             if isinstance(col, str):
                 result.append(col)
-            elif isinstance(col, int):
+            elif isinstance(col, int) and df is not None:
                 result.append(df.columns[col])
             else:
                 log.error("Error reading column '{0}'. Names have to be strings or integers.".format(str(col)))
@@ -127,7 +130,7 @@ def get_columns(names, df=None):
 
         # Process default (auto) values
         if len(result) == 0 and df is not None:  # Explicit empty list = ALL columns
-            result = get_all_columns(df)
+           result = get_all_columns(df)
 
     elif isinstance(names, dict):  # An object specifying which columns to select
         exclude = names.get("exclude")

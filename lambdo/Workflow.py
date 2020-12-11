@@ -94,6 +94,8 @@ class Workflow:
         """
         log.info("Start executing workflow '{0}'.".format(self.id))
 
+        # TODO: Use topology for determining the sequence of operations on workflow elements (instead of the current approach)
+
         # Currently we populate all tables sequentially and each population automatically evaluates all the table columns
         for i, tab in enumerate(self.tables):
 
@@ -106,9 +108,6 @@ class Workflow:
 
             # Post-process the table
             tab.filter()
-
-        # TODO: Build topology as a graph of mixed table population and column evaluation operations according to their depednecies
-        # TODO: Execute operations in the topology by either populating a table or evaluating a column
 
         log.info("Finish executing workflow '{0}'.".format(self.id))
 
