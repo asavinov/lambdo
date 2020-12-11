@@ -115,10 +115,13 @@ class Table:
 
         if operation == 'all':
             new_data = self._populate_function()
-            if new_data is not None:
-                self.data = new_data
+        elif operation == 'project':
+            new_data = self._populate_project()
         else:
             log.warning("Unknown operation type '{0}' in definition of table {self.id}".format(operation))
+
+        if new_data is not None:
+            self.data = new_data
 
         log.info("<=== Finish populating table '{0}'".format(self.id))
 
@@ -160,25 +163,27 @@ class Table:
 
     def _populate_function(self):
         """
-        This operation type uses the provided UDF, model and inputs to fully populate this table.
+        The specified UDF with the model and inputs will return a fully populated table.
         """
+        definition = self.table_json
+
         #
         # Stage 1. Resolve the function
         #
-        func_name = self.table_json.get('function')
+        func_name = definition.get('function')
         func = resolve_full_name(func_name)
 
         #
         # Stage 2. Prepare input data
         #
-        inputs = self.table_json.get('inputs')
+        inputs = definition.get('inputs')
         tables = self.workflow.get_tables(inputs)
         if not tables: tables = []
 
         #
         # Stage 3. Prepare argument object to pass to the function as the second argument
         #
-        model = self.table_json.get('model', {})
+        model = definition.get('model', {})
 
         #
         # Stage 6. Apply function
@@ -200,6 +205,54 @@ class Table:
             out = func(tables[0].data, **model)
         else:
             out = func([t.data for t in tables], **model)
+
+        return out
+
+    def _populate_project(self):
+        """
+        Data from the source table is projected along the specified source columns by using only unique combinations.
+        """
+        definition = self.table_json
+
+        #
+        # Read parameters
+        #
+        source_table_name = definition.get('source_table')
+        source_table = self.workflow.get_table(source_table_name)
+        if not source_table:
+            log.error("Source table '{0}' cannot be found in the project column definition..".format(source_table_name))
+            return
+
+        inputs = definition.get('inputs')
+        if not all_columns_exist(inputs, source_table.data):
+            log.error("Not all source columns available in the project column definition.".format())
+            return
+
+        outputs = definition.get('outputs')
+
+        #
+        # Produce all unique combinations of the input columns
+        #
+        """
+        INFO:
+        df_new = df.drop_duplicates(subset=['C1', 'C2', 'C3'])  # Drop duplicates
+        a_df = df.drop_duplicates(['col1', 'col2'])[['col1', 'col2']]
+        df = df.groupby(by=['C1', 'C2', 'C3'], as_index=False).first()  # Using groupby
+        np.unique(df[['col1', 'col2']], axis=0)  # Not for object data (error for object types)
+        """
+        out = source_table.data.drop_duplicates(subset=inputs)
+        out = out[inputs]  # Leave only project columns (de-duplicate will return all source columns)
+
+        out.reset_index(drop=True, inplace=True)
+
+        # Rename to output names
+        if outputs:
+            if len(outputs) != len(inputs):
+                log.error("Number of output columns in the project column definition has to be equal to the number of input columns.".format())
+                return
+
+            rename_dict = dict(zip(inputs, outputs))
+            out.rename(columns=rename_dict, inplace=True)
 
         return out
 

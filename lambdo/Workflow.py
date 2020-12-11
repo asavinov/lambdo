@@ -104,7 +104,7 @@ class Workflow:
             for i, col in enumerate(tab.columns):
                 col.evaluate()
 
-            # Post-processs the table
+            # Post-process the table
             tab.filter()
 
         # TODO: Build topology as a graph of mixed table population and column evaluation operations according to their depednecies

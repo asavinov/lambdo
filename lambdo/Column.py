@@ -426,8 +426,8 @@ class Column:
             log.error("Not all key columns available in the link column definition.".format())
             return
 
-        linked_table = definition.get('linked_table', '')
-        linked_table = self.table.workflow.get_table(linked_table)
+        linked_table_name = definition.get('linked_table', '')
+        linked_table = self.table.workflow.get_table(linked_table_name)
         if not linked_table:
             log.error("Linked table '{0}' cannot be found in the link column definition..".format(linked_table))
             return
