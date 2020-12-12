@@ -145,7 +145,7 @@ The records can be also selected by specifying their integer position: start, en
 
 ## Table population operations
 
-A table is a *set* of tuples. A *tuple* is a combination of attribute *values*. The procedure for generating all tuples of a table is referred to as *population*. 
+A table is a *set* of tuples. A *tuple* is a combination of attribute *values*. The procedure for generating all tuples of a table is referred to as *population*.
 
 The way a table is populated is determined by the *operation* type which is part of its definition. An operation should be specified explicitly in the `operation` field (recommended). If not specified, it can be derived from the definition because different definitions use different options.
 
@@ -160,7 +160,3 @@ Currently, there exist the following operation types:
 * `join` This operation implements a classical join of two or more source tables which are specified in the definition and which have to be completely processed before the join can start. It is recommended to `link` columns rather than this table operation.
 
 * `aggregate` This operation implements classical grouping and aggregation. It generates a new table as opposed to the aggregate column operation which adds a new colum. It is recommended to use `aggregate` columns rather than this table operation.
-
-## Table filter operations
-
-TBD

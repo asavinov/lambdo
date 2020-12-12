@@ -110,6 +110,10 @@ class Table:
         operation = self.table_json.get('operation')
         if operation == 'noop':
             return True
+
+        if operation:
+            return False
+
         function = self.table_json.get('function')
         this_table_no = self.workflow.get_table_number(self.id)
         # No function specified and no parent table
@@ -121,6 +125,10 @@ class Table:
         operation = self.table_json.get('operation')
         if operation == 'extend':
             return True
+
+        if operation:
+            return False
+
         function = self.table_json.get('function')
         this_table_no = self.workflow.get_table_number(self.id)
         # No function specified and there exists previous table
@@ -132,6 +140,10 @@ class Table:
         operation = self.table_json.get('operation')
         if operation == 'all':
             return True
+
+        if operation:
+            return False
+
         function = self.table_json.get('function')
         if function:
             return True
@@ -153,6 +165,10 @@ class Table:
         operation = self.table_json.get('operation')
         if operation == 'join':
             return True
+
+        if operation:
+            return False
+
         function = self.table_json.get('function')
         if function and function == 'lambdo.std:join':
             return True
@@ -162,6 +178,10 @@ class Table:
         operation = self.table_json.get('operation')
         if operation == 'aggregate':
             return True
+
+        if operation:
+            return False
+
         function = self.table_json.get('function')
         if function and function == 'lambdo.std:aggregate':
             return True
@@ -257,17 +277,30 @@ class Table:
         #
         # Apply an appropriate population function depending on the operation (definition) type. Currently on function-based definition
         #
-        if self.is_op_project():
+        if self.is_op_noop():
+            new_data = None
+
+        elif self.is_op_extend():
+            new_data = self._populate_extend()
+
+        elif self.is_op_join():
+            new_data = self._populate_join()
+
+        elif self.is_op_aggregate():
+            new_data = self._populate_aggregate()
+
+        elif self.is_op_project():
             new_data = self._populate_project()
+
         elif self.is_op_product():
             log.error("Product operation is not implemented")
+
         elif self.is_op_all():
             new_data = self._populate_function()
+
         else:
-            # TODO: We need to introduce an operation which means that the data will be assigned using API from outside before evaluation
-            new_data = None
             operation = self.table_json.get('operation')
-            #log.warning("Unknown operation type '{0}' in definition of table {1}".format(operation, self.id))
+            log.warning("Unknown operation type '{0}' in the definition of table {1}".format(operation, self.id))
 
         if new_data is not None:
             self.data = new_data
@@ -324,6 +357,32 @@ class Table:
             include_columns = get_columns(column_filter, self.data)
             if include_columns:
                 self.data = self.data[include_columns]
+
+    def _populate_extend(self):
+        """
+        The base (typically previous) table is used to add columns in this table. No new records will be added.
+        """
+        definition = self.table_json
+        this_table_no = self.workflow.get_table_number(self.id)
+        base_table = self.workflow.tables[this_table_no-1]
+
+        out = pd.DataFrame(base_table.data)
+
+        return out
+
+    def _populate_join(self):
+        """
+        Join input tables on the specified columns.
+        """
+        definition = self.table_json
+        return self._populate_function()
+
+    def _populate_aggregate(self):
+        """
+        Aggregate facts from input tables.
+        """
+        definition = self.table_json
+        return self._populate_function()
 
     def _populate_function(self):
         """

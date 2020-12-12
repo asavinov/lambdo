@@ -16,7 +16,8 @@ class TableJoinTestCase(unittest.TestCase):
                     "id": "Main Table"
                 },
                 {
-                    "id": "Second Table"
+                    "id": "Second Table",
+                    "operation": "noop"
                 },
                 {
                     "id": "Merged Table",
@@ -71,7 +72,8 @@ class TableJoinTestCase(unittest.TestCase):
                     "id": "Main Table"
                 },
                 {
-                    "id": "Second Table"
+                    "id": "Second Table",
+                    "operation": "noop"
                 },
                 {
                     "id": "Merged Table",
