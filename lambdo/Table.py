@@ -178,7 +178,9 @@ class Table:
         dependencies.append(self)
         dependencies.extend(self.columns)
 
-        # TODO: Add row filters and column filters
+        # Add filter operation (Table, 'filter') if it has been defined
+        if self.has_filters():
+            dependencies.append((self, 'filter'))
 
         return dependencies
 
@@ -272,7 +274,22 @@ class Table:
 
         log.info("<=== Finish populating table '{0}'".format(self.id))
 
-    def filter(self):
+    def has_filters(self):
+        row_filter = self.table_json.get("row_filter")
+        if row_filter:
+            return True
+
+        column_filter = self.table_json.get("column_filter")
+        if column_filter:
+            return True
+
+        for col in self.columns:
+            if col.column_json.get("exclude"):
+                return True
+
+        return False
+
+    def execute_filter(self):
         """
         Apply filters for post-processing after the table and all its columns have been evaluated.
         It is a kind of a convenience approach where we define filters directly in the table without defining a new table.
@@ -288,10 +305,8 @@ class Table:
             self.data = apply_row_filter(self.data, row_filter)
 
         #
-        # Column filter
-        #
-
         # Remove column which were marked for removal in their definition
+        #
         columns_exclude = []
         for i, col in enumerate(self.columns):
             ex = col.column_json.get("exclude")  # If a column definition has this flag then it will be removed
@@ -301,7 +316,9 @@ class Table:
         if columns_exclude:
             self.data.drop(columns=columns_exclude, inplace=True)
 
-        # Remove columns from the list
+        #
+        # Column filter
+        #
         column_filter = self.table_json.get("column_filter")
         if column_filter:
             include_columns = get_columns(column_filter, self.data)

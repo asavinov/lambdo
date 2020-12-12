@@ -58,8 +58,21 @@ class Topology:
                 if elem in done:
                     continue
 
-                deps = elem.get_dependencies()  # Get all element definitions this element depends upon
-                if set(deps) <= set(done):  # All deps have to be in previous layers
+                #
+                # Find dependencies of this operation
+                #
+                if isinstance(elem, (Table, Column)):
+                    deps = elem.get_dependencies()  # Get all element definitions this element depends upon
+                elif isinstance(elem, (tuple, list)) and isinstance(elem[0], Table):
+                    deps = [elem[0]]  # Filter depends on its table
+                    deps.extend(elem[0].columns)  # Filter is applied only after all columns have been evaluated
+                else:
+                    pass  # Error: unknown operation
+
+                #
+                # If all dependencies have been executed then add this element to the current layer
+                #
+                if set(deps) <= set(done):
                     layer.append(elem)
 
             if len(layer) == 0:

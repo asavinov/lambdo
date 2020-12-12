@@ -103,8 +103,13 @@ class Workflow:
                     elem.populate()
                 elif isinstance(elem, Column):
                     elem.evaluate()
+                elif isinstance(elem, (tuple, list)):
+                    if isinstance(elem[0], Table) and elem[1] == 'filter':
+                        elem[0].execute_filter()
+                    else:
+                        pass  # Warning: wrong object type in an operation
                 else:
-                    pass
+                    pass  # Warning: wrong object type in an operation
 
         log.info("Finish executing workflow '{0}'.".format(self.id))
 
