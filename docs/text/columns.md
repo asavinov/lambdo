@@ -190,3 +190,23 @@ Run this example and check out its result which will contain three new columns w
 ```console
 $ lambdo examples/example5.json
 ```
+
+## Column evaluation operations
+
+A column is a *function* which maps input values to output values. The procedure for generating all output values a column is referred to as *evaluation*. 
+
+The way a column is evaluated is determined by the *operation* type which is part of its definition. An operation should be specified explicitly in the `operation` field (recommended). If not specified, it can be derived from the definition because different definitions use different options.
+
+Currently, there exist the following operation types:
+
+* `noop` No evaluation is performed.
+
+* `calculate` An output value is computed from the input values of the same record using a user-defined function.
+
+* `roll` An output value is computed from the input values of a subset of records (window) using a user-defined aggregate function.
+
+* `all` A user-defined function computes and returns the whole column with all output values for all inputs by processing all records of the table.
+
+* `link` Output values will store references to the records of the output table by representing a mapping from this table to the output table. The criteria for the mapping are specified in the definition. Link columns can be then used for grouping (in `aggregate` columns) or as segments in complex columns.
+
+* `aggregate` Outputs of this column aggregate subsets (groups) of records from another (fact) table using an aggregate function provided in the definition.
