@@ -44,6 +44,7 @@ class Topology:
         all = []
         for t in self.workflow.tables:
             table_deps = t.get_all_own_dependencies()
+            #all = list(set(all).union(set(table_deps)))
             all.extend(table_deps)
 
         # Empty collection of already processed elements (they can be simultaniously removed from all)

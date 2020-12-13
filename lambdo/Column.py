@@ -41,6 +41,9 @@ class Column:
             self.column_json['id'] = self.id
             self.columnNo += 1
 
+    def __repr__(self):
+        return '[' + self.table.id + '::' + self.id+']'
+
     def get_inputs(self):
         """Get a list of input column names specified in this definition."""
 
@@ -68,7 +71,7 @@ class Column:
 
         return outputs
 
-    def _get_operation_type(self):
+    def get_operation(self):
         """
         If operation type is specified explicitly then return it.
         Otherwise, determine the operation type from parameters.
@@ -92,9 +95,11 @@ class Column:
             else:
                 operation = 'roll'
         else:
-            function = self.column_json.get('function')
-            if not function:
-                return 'noop'  # No window, no function
+            function = definition.get('function')
+            if function:
+                operation = 'calculate'
+            else:
+                operation = 'noop'  # No window, no function
 
         return operation
 
@@ -105,37 +110,37 @@ class Column:
         return False
 
     def is_op_one(self):
-        operation = self._get_operation_type()
+        operation = self.get_operation()
         if operation == 'calculate' or operation == 'calc':
             return True
         return False
 
     def is_op_roll(self):
-        operation = self._get_operation_type()
+        operation = self.get_operation()
         if operation == 'roll':
             return True
         return False
 
     def is_op_all(self):
-        operation = self._get_operation_type()
+        operation = self.get_operation()
         if operation == 'all':
             return True
         return False
 
     def is_op_calc(self):
-        operation = self._get_operation_type()
+        operation = self.get_operation()
         if self.is_op_one() or self.is_op_roll() or self.is_op_all():
             return True
         return False
 
     def is_op_link(self):
-        operation = self._get_operation_type()
+        operation = self.get_operation()
         if operation == 'link':
             return True
         return False
 
     def is_op_aggregate(self):
-        operation = self._get_operation_type()
+        operation = self.get_operation()
         if operation == 'aggregate' or operation == 'agg':
             return True
         return False
@@ -156,6 +161,9 @@ class Column:
             # Input column objects for which we need to find definitions
             inputs = self.get_inputs()
             dependencies.extend(self.table.get_definitions_for_columns(inputs))
+
+            # Remove self-dependency
+            dependencies = [x for x in dependencies if x != self]
 
             # TODO: input columns can be column paths
 
@@ -209,7 +217,8 @@ class Column:
         Evaluate this column.
         Evaluation logic depends on the operation (definition) kind.
         """
-        log.info("---> Start evaluating column '{0}'".format(self.id))
+        operation = self.get_operation()
+        log.info("---> Start evaluating column '{0}'. Operation '{1}'.".format(self.id, operation))
 
         definition = self.column_json
 
@@ -280,9 +289,11 @@ class Column:
             elif self.is_op_all():
                 out = self._evaluate_all(func, data, data_type, model)
             else:
-                operation = self._get_operation_type()
                 log.warning("Unknown operation '{0}'. Skip column definition.".format(operation))
                 return
+        else:
+            log.warning("Unknown operation '{0}'. Skip column definition.".format(operation))
+            return
 
         #
         # Post-process the result by renaming the output columns accordingly (some convention is needed to know what output to expect)

@@ -80,7 +80,7 @@ class Workflow:
 
     def get_tables(self, table_names):
         """Find tables with the specified names"""
-        if not table_names: return None
+        if not table_names: return []
         tables = filter(lambda x: x.id in table_names, self.tables)
         return list(tables)
 

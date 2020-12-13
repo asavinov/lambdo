@@ -42,6 +42,9 @@ class Table:
         columns_json = self.table_json.get("columns", [])
         self.columns = self._create_columns_from_descriptions()
 
+    def __repr__(self):
+        return '['+self.id+']'
+
     def _create_columns_from_descriptions(self):
         """
         Create a list of Column objects from json.
@@ -220,7 +223,7 @@ class Table:
             # An extended table depends on its base table (which has to be fully generated)
             this_table_no = self.workflow.get_table_number(self.id)
             parent_table = self.workflow.tables[this_table_no - 1]
-            dependencies.extend(parent_table.get_all_own_dependencies())
+            dependencies.extend(parent_table.get_all_own_dependencies())  # We want to have all columns of the base table to be evaluated before extending it
 
         elif self.is_op_join():
             # A join table depends on its source tables
@@ -250,9 +253,14 @@ class Table:
             pass
 
         elif self.is_op_all():
-            # A function (all) table does not depend on any other table.
-            # TODO: In future, a function should be given a list of some declared input tables which are treated its dependencies, and the function returns one or more output tables
-            pass
+            # A function (all) table depends on the table declared in inputs
+            inputs = definition.get('inputs', [])
+            input_tables = self.workflow.get_tables(inputs)
+            dependencies.extend(input_tables)
+
+            for t in input_tables:
+                # We want to have all columns of the input table to be evaluated before the tables are used (example: writing previous table to a file)
+                dependencies.extend(t.get_all_own_dependencies())
 
         else:
             # TODO: Error: unknown operation type
@@ -272,7 +280,8 @@ class Table:
         Population is determined by the table definition (operation) type: product, project, input/output etc.
         The result of population is a new pandas index with key columns stored in the data field.
         """
-        log.info("===> Start populating table '{0}'".format(self.id))
+        operation = self.table_json.get('operation')
+        log.info("===> Start populating table '{0}'. Operation '{1}'.".format(self.id, operation))
 
         #
         # Apply an appropriate population function depending on the operation (definition) type. Currently on function-based definition
@@ -299,7 +308,6 @@ class Table:
             new_data = self._populate_function()
 
         else:
-            operation = self.table_json.get('operation')
             log.warning("Unknown operation type '{0}' in the definition of table {1}".format(operation, self.id))
 
         if new_data is not None:
