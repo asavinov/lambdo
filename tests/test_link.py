@@ -53,7 +53,7 @@ class LinkTestCase(unittest.TestCase):
 
         merged_tb = wf.tables[0]
         self.assertEqual(len(merged_tb.data), 4)  # Same number of rows
-        self.assertEqual(len(merged_tb.data.columns), 4)  # We add all linked columns plus the new link column itself
+        self.assertEqual(len(merged_tb.data.columns), 2)
 
         link_column = main_tb.data['My Link']
         self.assertEqual(link_column[0], 0)
@@ -107,7 +107,7 @@ class LinkTestCase(unittest.TestCase):
 
         merged_tb = wf.tables[0]
         self.assertEqual(len(merged_tb.data), 4)  # Same number of rows
-        self.assertEqual(len(merged_tb.data.columns), 6)  # We add all linked columns plus the new link column itself
+        self.assertEqual(len(merged_tb.data.columns), 3)
 
         link_column = main_tb.data['My Link']
         self.assertEqual(link_column[0], 0)

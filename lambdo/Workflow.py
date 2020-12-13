@@ -96,6 +96,7 @@ class Workflow:
         log.info("Start executing workflow '{0}'.".format(self.id))
 
         topology = Topology(self)
+        topology.translate()
         for layer in topology.layers:
             # Execute operations in one layer
             for elem in layer:

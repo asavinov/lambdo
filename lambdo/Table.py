@@ -225,8 +225,12 @@ class Table:
             parent_table = self.workflow.tables[this_table_no - 1]
             dependencies.extend(parent_table.get_all_own_dependencies())  # We want to have all columns of the base table to be evaluated before extending it
 
+            # TODO: In fact, if we extend by-reference (COM approach) then it depends on only table population
+            # If we extend by-value then we need to evaluate all base columns and only after that extend
+            # Maybe we can introduce two operations: relational extend by-value, and COM extend by-reference (particular case of product and filter)
+
         elif self.is_op_join():
-            # A join table depends on its source tables
+            # A join table depends on its source tables (which have to be completely generated)
             inputs = definition.get('inputs', [])
             source_tables = self.workflow.get_tables(inputs)
 
@@ -236,6 +240,7 @@ class Table:
 
         elif self.is_op_aggregate():
             # TODO: An aggregate table depends on its source (fact) table and its measures and its link/grouping column.
+            # Maybe rename to groupby in order to distinguish from aggregate columns and make clear that it is classical relational operation
             pass
 
         elif self.is_op_project():
@@ -247,6 +252,18 @@ class Table:
             # The source table key columns
             inputs = definition.get('inputs', [])
             dependencies.extend(source_table.get_definitions_for_columns(inputs))
+
+            # TODO:
+            #  1. In principle, normally we want to do projection only after facts have been filtered, that is, after finishing the table
+            #    Note that we frequently want to compute a link column AFTER projection
+            #    Yet, theoretically, some new fact columns could be computed based on the data in the projection accessed via link column
+            # It is a use case, where we want to do filtering, then apply projection, and then add columns to the filtered table.
+            # Probably we need an explicit filter/extend operation for that purpose.
+            # CONCLUSION: In general, project depends on only population + projected key columns (not all columns)
+            #   because we might want to add new fact columns based on the projected table
+            #   Yet, in-table filters always overwrite the base table and make it invisible and then project will use the flter which requires all base columns to be evaluated.
+            #   New fact columns can be defined only in the filtered table but since it is in-filter, we cannot do it.
+            #  To solve this problem we must use an independent filter/extension table and then define new fact columns in it.
 
         elif self.is_op_product():
             # TODO: A product table (including project tables and filter table) depends on its domain tables which have to be populated before because their ids will be used in this table attributes.
@@ -267,6 +284,56 @@ class Table:
             pass
 
         return dependencies
+
+    def add_compose_column(self, complex_name):
+        """
+        Given a complex column name, add a compose column definition if it does not exist.
+        Add recursively compose columns to the linked table if they do not exist (if it exists then the recursion is stopped).
+        If it is not a complex column then do nothing (is used to stop the recursion).
+        """
+
+        table_name = self.id
+        table = self
+
+        #
+        # Check if the column with such nae already exists
+        # It could be either defined explicitly by the user or added due to the use in a previously analyzed definition.
+        #
+        complex_name_definitions = table.get_definitions_for_columns(complex_name)
+        if complex_name_definitions:
+            return  # There exists a definition which generates this column name (used also to stop recursion)
+
+        #
+        # Break the path into link (in this table) and tail (in the linked table).
+        #
+        segments = complex_name.split('::', 1)
+        segments = [x.strip() for x in segments]
+        link_column = segments[0]
+        linked_column = segments[1:] or None
+
+        # Check if the column is primitive (not a path)
+        if linked_column is None:
+            return  # It is not a complex path. No operation is needed (used also to stop recursion)
+
+        #
+        # Add compose operation to materialize this pair
+        #
+        complex_name_definitions = {
+            "id": complex_name,
+            "operation": "compose",
+            "inputs": [link_column, linked_column],
+        }
+
+        #
+        # Call the same method for the tail (it will do nothing if the tail is simple)
+        #
+        link_column_definitions = table.get_definitions_for_columns(link_column)  # Find definition of link column
+        link_column = link_column_definitions[0] or None
+        # TODO: Validity check: link_column must be a link column operation (retrieve its type and check). Error: wrong column path. All its segments except for the last one must be link columns.
+        linked_table_name = link_column['linked_table']
+        linked_table = self.workflow.get_table(linked_table_name)
+
+        linked_table.add_compose_column(linked_column)
 
     #
     # Data operations
@@ -291,7 +358,6 @@ class Table:
 
         elif self.is_op_extend():
             new_data = self._populate_extend()
-
         elif self.is_op_join():
             new_data = self._populate_join()
 

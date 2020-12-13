@@ -69,6 +69,7 @@ class TablePopulateTestCase(unittest.TestCase):
         wf = Workflow(wf_json)
 
         tp = Topology(wf)
+        tp.translate()
 
         layers = tp.layers
         # Layers:

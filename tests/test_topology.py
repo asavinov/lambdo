@@ -28,6 +28,7 @@ class TopologyTestCase(unittest.TestCase):
         wf = Workflow(wf_json)
 
         tp = Topology(wf)
+        tp.translate()
 
         layers = tp.layers
         # Layers:
@@ -73,6 +74,7 @@ class TopologyTestCase(unittest.TestCase):
         wf = Workflow(wf_json)
 
         tp = Topology(wf)
+        tp.translate()
 
         layers = tp.layers
         # Layers:
@@ -133,6 +135,7 @@ class TopologyTestCase(unittest.TestCase):
         wf = Workflow(wf_json)
 
         tp = Topology(wf)
+        tp.translate()
 
         layers = tp.layers
         # Layers:
@@ -197,6 +200,7 @@ class TopologyTestCase(unittest.TestCase):
         wf = Workflow(wf_json)
 
         tp = Topology(wf)
+        tp.translate()
 
         layers = tp.layers
         # Layers:
@@ -237,6 +241,7 @@ class TopologyTestCase(unittest.TestCase):
         wf = Workflow(wf_json)
 
         tp = Topology(wf)
+        tp.translate()
 
         layers = tp.layers
         # Layers:

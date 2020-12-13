@@ -139,6 +139,12 @@ class Column:
             return True
         return False
 
+    def is_op_compose(self):
+        operation = self.get_operation()
+        if operation == 'compose':
+            return True
+        return False
+
     def is_op_aggregate(self):
         operation = self.get_operation()
         if operation == 'aggregate' or operation == 'agg':
@@ -150,7 +156,6 @@ class Column:
         Get tables and columns this column depends upon.
         The returned elements must be executed before this element can be executed because this element consumes their data.
         """
-
         definition = self.column_json
         dependencies = []
 
@@ -185,6 +190,34 @@ class Column:
             linked_keys = definition.get('linked_keys', [])
             dependencies.extend(linked_table.get_definitions_for_columns(linked_keys))
 
+        elif self.is_op_compose():
+            # This (main) table has to be populated
+            dependencies.append(self.table)
+
+            inputs = definition['inputs']
+            # TODO: Validty check. Two elements must be provided in a compose column. (If not two, then they had to be converted to only two by merging them.)
+
+            # Link column (first segment) has to be evaluated
+            link_column_name = next(iter(inputs), None)
+            link_column_definitions = self.table.get_definitions_for_columns(link_column_name)
+            link_column_definition = next(iter(link_column_definitions), None)
+            dependencies.append(link_column_definition)
+
+            # Linked column path (tail) in the linked table has to exist (recursion)
+            linked_table_name = link_column_definition.column_json['linked_table']
+            linked_table = self.table.workflow.get_table(linked_table_name)
+            linked_column_name = inputs[1] if len(inputs) > 1 else None
+
+            linked_column_definitions = linked_table.get_definitions_for_columns(linked_column_name)
+            linked_column_definition = next(iter(linked_column_definitions), None)
+            if linked_column_definition:  # A linked column might not have a definition, e.g., an attribute
+                dependencies.append(linked_column_definition)
+            # Here we assume that the tail dependencies will be retrieved separately.
+            # Alternatively, we could retrieve them here using recursion
+
+            # Lined table has to be populated. (Yet, it will added to dependency by the link column.)
+            dependencies.append(linked_table)
+
         elif self.is_op_aggregate():
             # This table has to be populated
             dependencies.append(self.table)
@@ -217,14 +250,22 @@ class Column:
         Evaluate this column.
         Evaluation logic depends on the operation (definition) kind.
         """
-        operation = self.get_operation()
-        log.info("---> Start evaluating column '{0}'. Operation '{1}'.".format(self.id, operation))
-
         definition = self.column_json
+        operation = self.get_operation()
+
+        log.info("---> Start evaluating column '{0}'. Operation '{1}'.".format(self.id, operation))
 
         # Link columns use their own definition schema different from computaional (functional) definitions
         if self.is_op_link():
             out = self._evaluate_link()
+            self._append_output_columns(out)
+            self.data.append(out)
+            return
+
+        # Compose columns use their own definition schema different from computaional (functional) definitions
+        if self.is_op_compose():
+            out = self._evaluate_compose()
+            self._append_output_columns(out)
             self.data.append(out)
             return
 
@@ -296,25 +337,22 @@ class Column:
             return
 
         #
+        # Append the newly generated column(s) to this table
+        #
+        self._append_output_columns(out)
+
+        log.info("<--- Finish evaluating column '{0}'".format(self.id))
+
+    def _append_output_columns(self, out):
+        """The specified column(s) are appended to this table."""
+
+        definition = self.column_json
+        outputs = self.get_outputs()
+        fillna_value = definition.get('fillna_value')
+
+        #
         # Post-process the result by renaming the output columns accordingly (some convention is needed to know what output to expect)
         #
-
-        # 1)
-        # Extensions: It is a convenience method of encoding (representing) definitions in JSON.
-        # Once a definition is parsed, extensions do not exist anymore.
-        # Thus extensions is a mechanism for simplifying writing definitions in JSON.
-
-        # DEFINITION: A column object is a definition of an operation/procedure rather than one column. A column object can generate multiple columns.
-        # If outputs are present, then they overwrite id.
-        # In this sense, if outputs are used only for this purpose, then we should use only one field for naming result columns.
-        # In any case, a column object does not represent a column in the table - its ids/outputs do.
-        # Rather, a column object represents a *procedure*, which generates one or many columns.
-
-        # A table has as many columns as it has outputs (in all column definitions)
-        # A column data is actually an output, and we use column data names in other definitions
-        # A column data name is a concatenation of its column definition name and its output name.
-        # If outputs are not given, the column data name is equal to column definition name
-        # If column definition name is not given, then each column data name is given by its outputs.
 
         # TODO: We need to define a logic of naming (single or multiple) physical columns depending on the names in "outputs".
         # TODO: This logic has to be used in establishing mappings between column object and its data objects.
@@ -338,15 +376,11 @@ class Column:
         # Note that it is an essential feature, because some complex procedures generate several columns and we cannot solve this problem using wrappers.
         # If it a list-like array of results then we need to be able to convert it to individual Series to be added to the table.
 
-        outputs = self.get_outputs()
-
         # TODO: Extracting the necessary column (Series, ndarray etc.) from a complex object
         #  Acceess to the result is provided by specifying access path like 'result_path' or 'result_method'
         # For example, arima returns an object which contains forecast values and deviation values which have to be extracted and have different paths.
         # Note that works for only one output (if multiple then we need a list of result pahts/methods/functions)
         # Therefore, a list of paths/methods/functions can be provided along with a list of outputs/ids while the result is spposed to be one object.
-
-        fillna_value = definition.get('fillna_value')
 
         # TODO: The result can be Series/listndarray(1d or 2d) and we need to convert it to DataFrame by using the original index.
         out = pd.DataFrame(out)  # Result can be ndarray so we convert to data frame
@@ -356,6 +390,8 @@ class Column:
             if outputs and i < len(outputs):  # Explicitly specified output column name
                 attached_column_name = outputs[i]
             else:  # Same name - overwrite input column
+                inputs = definition.get('inputs', [])
+                inputs = get_columns(inputs, self.table.data)
                 attached_column_name = inputs[i]
 
             #
@@ -367,9 +403,6 @@ class Column:
 
             if fillna_value is not None:
                 self.table.data[attached_column_name].fillna(fillna_value, inplace=True)
-
-
-        log.info("<--- Finish evaluating column '{0}'".format(self.id))
 
     def _evaluate_all(self, func, data, data_type, model):
         """
@@ -601,10 +634,10 @@ class Column:
 
         out_df = pd.merge(
             main_table.data,  # This table
-            linked_table.data.rename(columns=lambda x: linked_prefix+x, inplace=False),  # Target table to link to. We rename columns (not in place - the origina frame preserves column names)
+            linked_table.data.rename(columns=lambda x: linked_prefix + x, inplace=False),  # Target table to link to. We rename columns (not in place - the original frame preserves column names)
             how='left',  # This (main) table is not changed - we attach target records
             left_on=main_keys,  # List of main table key columns
-            right_on= [linked_prefix+x for x in linked_keys],  # List of target table key columns. We add our suffix
+            right_on= [linked_prefix + x for x in linked_keys],  # List of target table key columns. Note that we renamed them above so we use modified names.
             left_index=False,
             right_index=False,
             #suffixes=('', linked_suffix),  # We do not use suffixes because they cannot be enforced (they are used only in the case of equal column names)
@@ -619,11 +652,71 @@ class Column:
         # Rename our link column by using only specified column name
         out_df.rename({column_name+'::'+index_column_name: column_name}, axis='columns', inplace=True)
 
-        # Store the result df with all target column (in the case they are used in other definitions)
-        main_table.data = out_df
+        out = out_df[column_name]
+
+        # Store the result df with all target columns (in the case they are used in other definitions)
+        #main_table.data = out_df
         # ??? If the result df includes all columns of this df, then why not to simply replace this df by the new df?
         # ??? What if this df already has some linked (tareget) columns from another table attached before?
         # ??? What if the target table already has linked (target) columns from its own target table (recursive)?
+
+        return out
+
+    def _evaluate_compose(self):
+        """
+        Compose column evaluation. Materialize a composition of one link column and one linked (target) column.
+        """
+
+        definition = self.column_json
+
+        #
+        # Read and validate parameters
+        #
+
+        inputs = definition['inputs']
+        # TODO: Validty check. Two elements must be provided in a compose column. (If not two, then they had to be converted to only two by merging them.)
+
+        # Link column (first segment) has to be evaluated
+        link_column_name = next(iter(inputs), None)
+        link_column_definitions = self.table.get_definitions_for_columns(link_column_name)
+        link_column_definition = next(iter(link_column_definitions), None)
+        #dependencies.append(link_column_definition)
+
+        # Linked column path (tail) in the linked table has to exist (recursion)
+        linked_table_name = link_column_definition.column_json['linked_table']
+        linked_table = self.table.workflow.get_table(linked_table_name)
+        linked_column_name = inputs[1] if len(inputs) > 1 else None
+
+        linked_column_definitions = linked_table.get_definitions_for_columns(linked_column_name)
+        linked_column_definition = next(iter(linked_column_definitions), None)
+        #dependencies.append(linked_column_definition)
+        # Here we assume that the tail dependencies will be retrieved separately.
+        # Alternatively, we could retrieve them here using recursion
+
+        #
+        # 2. Merge this table with the target table using this table link segment and target table index (row id), by actually selecting only the target segment
+        #
+
+        linked_prefix = link_column_name + '::'  # It will prepended to each linked (secondary) column name
+
+        out_df = pd.merge(
+            self.table.data,
+            linked_table.data.rename(columns=lambda x: linked_prefix + x, inplace=False),  # Target table to link to. We rename columns (not in place - the original frame preserves column names)
+            how='left',  # This (main) table is not changed - we attach target records
+            left_on=link_column_name,
+            right_on=None,
+            left_index=False,
+            right_index=True,  # Use index because link column stores index values
+            #suffixes=('', linked_suffix),  # We do not use suffixes because they cannot be enforced (they are used only in the case of equal column names)
+            sort=False  # Sorting decreases performance
+        )
+        # Here we get linked column names like 'Prefix::OriginalName'
+
+        #
+        # 3. Select one column, rename it if necessary
+        #
+
+        column_name = link_column_name + '::' + linked_column_name  # If no name specified, then automatically generate by concatenating two segments
 
         out = out_df[column_name]
 
