@@ -151,6 +151,97 @@ class Column:
             return True
         return False
 
+    def get_input_columns(self):
+        """
+        Get column names which are consumed by this operation (and hence they have to be evaluated before this operation can be executed).
+        The names in the list are fully qualified column names always starting from some table name like 'Table::Link::Column'.
+        Note that some operations (e.g., link or aggregate) can return columns of another table.
+        """
+        definition = self.column_json
+        table_name = self.table.id
+        dependencies = []
+
+        if self.is_op_calc():
+            inputs = self.get_inputs()
+            dependencies.extend([table_name + '::' + x for x in inputs])  # This table name as a prefix
+
+        elif self.is_op_link():
+            main_keys = definition.get('keys', [])
+            dependencies.extend([table_name + '::' + x for x in main_keys])  # This table name as a prefix
+
+            # Linked (target) columns have to be evaluated (although they are typically attributes)
+            linked_table_name = definition.get('linked_table', '')
+            linked_keys = definition.get('linked_keys', [])
+            dependencies.extend([linked_table_name + '::' + x for x in linked_keys])  # Linked table name as a prefix
+
+        elif self.is_op_compose():
+            inputs = self.get_inputs()
+
+            # Link column (first segment) has to be evaluated
+            link_column_name = inputs[0] or None
+            dependencies.append(table_name + '::' + link_column_name)
+
+            # Linked column path (tail) in the linked table has to exist (recursion)
+            link_column_definitions = self.table.get_definitions_for_columns(link_column_name)
+            link_column_definition = link_column_definitions[0] or None
+            linked_table_name = link_column_definition.column_json['linked_table']
+            linked_column_name = inputs[1] or None
+            dependencies.append(linked_table_name + '::' + linked_column_name)  # Linked (target) table name as a prefix
+
+        elif self.is_op_aggregate():
+            fact_table_name = definition.get('fact_table')
+
+            # Group column
+            group_column_name = definition.get('group_column')
+            dependencies.append(fact_table_name + '::' + group_column_name)  # Fact table name as a prefix
+
+            # Measure columns of the fact table
+            inputs = self.get_inputs()
+            dependencies.extend([fact_table_name + '::' + x for x in inputs])  # Fact table name as a prefix
+
+        else:
+            return []
+
+        return dependencies
+
+    def get_input_tables(self):
+        """
+        Get table names which are consumed by this operation.
+        Note that by tables here we mean sets (of tuples), that is, these tables have to be populated but necessarily all their columns (functions) have to be evaluated.
+        Which functions (columns) of the returned tables are really consumed has to be determined by some other method.
+        Note that this table will be always returned because any derived column can be evaluated only after populating this table.
+        """
+        definition = self.column_json
+        table_name = self.table.id
+        dependencies = []
+
+        dependencies.append(table_name)  # Always add this table
+
+        if self.is_op_calc():
+            pass
+
+        elif self.is_op_link():
+            linked_table_name = definition.get('linked_table', '')
+            dependencies.append(linked_table_name)
+
+        elif self.is_op_compose():
+            # Link column (first segment) is used to retrieve the linked table
+            inputs = self.get_inputs()
+            link_column_name = inputs[0] or None
+            link_column_definitions = self.table.get_definitions_for_columns(link_column_name)
+            link_column_definition = link_column_definitions[0] or None
+            linked_table_name = link_column_definition.column_json['linked_table']
+            dependencies.append(linked_table_name)
+
+        elif self.is_op_aggregate():
+            fact_table_name = definition.get('fact_table')
+            dependencies.append(fact_table_name)
+
+        else:
+            return []
+
+        return dependencies
+
     def get_dependencies(self):
         """
         Get tables and columns this column depends upon.

@@ -79,6 +79,78 @@ class ComposeTestCase(unittest.TestCase):
         self.assertEqual(compose_column[2], 2)
         self.assertEqual(compose_column[3], 2)
 
+    def test_compose_complex(self):
+        """Materialize a long (three segments) column path as a new column of the table using an explicit definition. A nested compose column has to be automatically created."""
+
+        wf_json = {
+            "id": "My workflow",
+            "tables": [
+                {
+                    "id": "Table 1",
+                    "attributes": ["A"],
+                    "columns": [
+                        {
+                            "id": "Compose",
+                            "operation": "compose",
+                            "inputs": ["Link", "Link", "C"]
+                        },
+                        {
+                            "id": "Link",
+                            "operation": "link",
+
+                            "keys": ["A"],
+
+                            "linked_table": "Table 2",
+                            "linked_keys": ["A"]
+                        }
+                    ]
+                },
+                {
+                    "id": "Table 2",
+                    "operation": "noop",
+                    "attributes": ["A", "B"],
+                    "columns": [
+                        {
+                            "id": "Link",
+                            "operation": "link",
+
+                            "keys": ["B"],
+
+                            "linked_table": "Table 3",
+                            "linked_keys": ["B"]
+                        }
+                    ]
+                },
+                {
+                    "id": "Table 3",
+                    "operation": "noop",
+                    "attributes": ["B", "C"],
+                    "columns": [
+                    ]
+                }
+            ]
+        }
+        wf = Workflow(wf_json)
+
+        # Main table
+        df = pd.DataFrame({'A': ['a', 'a', 'b', 'b']})
+        main_tb = wf.tables[0]
+        main_tb.data = df
+
+        # Secondary table (more data than used in the main table)
+        df = pd.DataFrame({'A': ['a', 'b', 'c'], 'B': ['e', 'f', 'g']})
+        sec_tb = wf.tables[1]
+        sec_tb.data = df
+
+        # Third table
+        df = pd.DataFrame({'B': ['e', 'f'], 'C': [1, 2]})
+        thd_tb = wf.tables[2]
+        thd_tb.data = df
+
+        # Complex column values: [1, 1, 2, 2]
+
+        # Check if a nested compose column was created correctly in the second table: [1, 2, None]
+
 
 if __name__ == '__main__':
     unittest.main()

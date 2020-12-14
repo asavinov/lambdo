@@ -109,6 +109,56 @@ class Table:
 
         return list(set(ret))
 
+    def add_compose_column(self, complex_name):
+        """
+        Given a complex column name, add a compose column definition if it does not exist.
+        Add recursively compose columns to the linked table if they do not exist (if it exists then the recursion is stopped).
+        If it is not a complex column then do nothing (is used to stop the recursion).
+        """
+
+        table_name = self.id
+        table = self
+
+        #
+        # Check if the column with such nae already exists
+        # It could be either defined explicitly by the user or added due to the use in a previously analyzed definition.
+        #
+        complex_name_definitions = table.get_definitions_for_columns(complex_name)
+        if complex_name_definitions:
+            return  # There exists a definition which generates this column name (used also to stop recursion)
+
+        #
+        # Break the path into link (in this table) and tail (in the linked table).
+        #
+        segments = complex_name.split('::', 1)
+        segments = [x.strip() for x in segments]
+        link_column = segments[0]
+        linked_column = segments[1:] or None
+
+        # Check if the column is primitive (not a path)
+        if linked_column is None:
+            return  # It is not a complex path. No operation is needed (used also to stop recursion)
+
+        #
+        # Add compose operation to materialize this pair
+        #
+        complex_name_definitions = {
+            "id": complex_name,
+            "operation": "compose",
+            "inputs": [link_column, linked_column],
+        }
+
+        #
+        # Call the same method for the tail (it will do nothing if the tail is simple)
+        #
+        link_column_definitions = table.get_definitions_for_columns(link_column)  # Find definition of link column
+        link_column = link_column_definitions[0] or None
+        # TODO: Validity check: link_column must be a link column operation (retrieve its type and check). Error: wrong column path. All its segments except for the last one must be link columns.
+        linked_table_name = link_column['linked_table']
+        linked_table = self.workflow.get_table(linked_table_name)
+
+        linked_table.add_compose_column(linked_column)
+
     def is_op_noop(self):
         operation = self.table_json.get('operation')
         if operation == 'noop':
@@ -284,56 +334,6 @@ class Table:
             pass
 
         return dependencies
-
-    def add_compose_column(self, complex_name):
-        """
-        Given a complex column name, add a compose column definition if it does not exist.
-        Add recursively compose columns to the linked table if they do not exist (if it exists then the recursion is stopped).
-        If it is not a complex column then do nothing (is used to stop the recursion).
-        """
-
-        table_name = self.id
-        table = self
-
-        #
-        # Check if the column with such nae already exists
-        # It could be either defined explicitly by the user or added due to the use in a previously analyzed definition.
-        #
-        complex_name_definitions = table.get_definitions_for_columns(complex_name)
-        if complex_name_definitions:
-            return  # There exists a definition which generates this column name (used also to stop recursion)
-
-        #
-        # Break the path into link (in this table) and tail (in the linked table).
-        #
-        segments = complex_name.split('::', 1)
-        segments = [x.strip() for x in segments]
-        link_column = segments[0]
-        linked_column = segments[1:] or None
-
-        # Check if the column is primitive (not a path)
-        if linked_column is None:
-            return  # It is not a complex path. No operation is needed (used also to stop recursion)
-
-        #
-        # Add compose operation to materialize this pair
-        #
-        complex_name_definitions = {
-            "id": complex_name,
-            "operation": "compose",
-            "inputs": [link_column, linked_column],
-        }
-
-        #
-        # Call the same method for the tail (it will do nothing if the tail is simple)
-        #
-        link_column_definitions = table.get_definitions_for_columns(link_column)  # Find definition of link column
-        link_column = link_column_definitions[0] or None
-        # TODO: Validity check: link_column must be a link column operation (retrieve its type and check). Error: wrong column path. All its segments except for the last one must be link columns.
-        linked_table_name = link_column['linked_table']
-        linked_table = self.workflow.get_table(linked_table_name)
-
-        linked_table.add_compose_column(linked_column)
 
     #
     # Data operations
