@@ -1,7 +1,11 @@
 # Change Log
 
-* v0.4.0-SNAPSHOT (in progress)
+* v0.4.0.dev (in progress)
 
+  * Compose columns
+  * Project tables
+  * Link columns
+  * Topologies
   * Functions defined as lambdas (and not only by name)
 
 * v0.3.0 (2018-11-25)

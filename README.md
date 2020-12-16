@@ -1,7 +1,11 @@
-[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/conceptoriented/Lobby)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/asavinov/lambdo/blob/master/LICENSE)
 [![Python 3.6](https://img.shields.io/badge/python-3.6-brightgreen.svg)](https://www.python.org/downloads/release/python-360/)
-[![PyPI version](https://badge.fury.io/py/lambdo.svg)](https://badge.fury.io/py/lambdo)
+[![PyPI version](https://img.shields.io/pypi/v/python-lambdo.svg)](https://pypi.python.org/pypi/python-lambdo)
+
+[![Paper](https://img.shields.io/badge/Paper-PDF-blueviolet.svg)](https://www.researchgate.net/publication/337336089_Concept-oriented_model_Modeling_and_processing_data_using_functions)
+[![Paper](https://img.shields.io/badge/Paper-PDF-blueviolet.svg)](https://www.researchgate.net/publication/316551218_From_Group-by_to_Accumulation_Data_Aggregation_Revisited)
+[![Paper](https://img.shields.io/badge/Paper-PDF-blueviolet.svg)](https://www.researchgate.net/publication/303840097_Concept-Oriented_Model_the_Functional_View)
+[![Paper](https://img.shields.io/badge/Paper-PDF-blueviolet.svg)](https://www.researchgate.net/publication/301764816_Joins_vs_Links_or_Relational_Join_Considered_Harmful)
 
 # Feature engineering and machine learning: together at last!
 
@@ -683,7 +687,7 @@ The `whl` package will be stored in the `dist` folder and can then be installed 
 Execute this command by specifying the `whl` file as a parameter:
 
 ```console
-$ pip install dist\lambdo-0.1.0-py3-none-any.whl
+$ pip install dist\lambdo-0.4.0-py3-none-any.whl
 ```
 
 # How to test
