@@ -48,7 +48,7 @@ class ResolveTestCase(unittest.TestCase):
         self.assertIsNotNone(ff)
         self.assertEqual(ff.__name__, 'predict')
         self.assertEqual(ff.__qualname__, 'BaseLibSVM.predict')
-        self.assertEqual(ff.__module__, 'sklearn.svm.base')
+        self.assertEqual(ff.__module__, 'sklearn.svm._base')
         self.assertEqual(type(ff).__name__, 'function')
         self.assertTrue(inspect.isfunction(ff))
 
@@ -56,7 +56,7 @@ class ResolveTestCase(unittest.TestCase):
         self.assertIsNotNone(ff)
         self.assertEqual(ff.__name__, 'scale')
         self.assertEqual(ff.__qualname__, 'scale')
-        self.assertEqual(ff.__module__, 'sklearn.preprocessing.data')
+        self.assertEqual(ff.__module__, 'sklearn.preprocessing._data')
         self.assertEqual(type(ff).__name__, 'function')
         self.assertTrue(inspect.isfunction(ff))
 
@@ -64,7 +64,7 @@ class ResolveTestCase(unittest.TestCase):
         self.assertIsNotNone(ff)
         self.assertEqual(ff.__name__, 'StandardScaler')
         self.assertEqual(ff.__qualname__, 'StandardScaler')
-        self.assertEqual(ff.__module__, 'sklearn.preprocessing.data')
+        self.assertEqual(ff.__module__, 'sklearn.preprocessing._data')
         self.assertEqual(type(ff).__name__, 'type')
         self.assertTrue(inspect.isclass(ff))
 
@@ -72,7 +72,7 @@ class ResolveTestCase(unittest.TestCase):
         self.assertIsNotNone(ff)
         self.assertEqual(ff.__name__, 'transform')
         self.assertEqual(ff.__qualname__, 'StandardScaler.transform')
-        self.assertEqual(ff.__module__, 'sklearn.preprocessing.data')
+        self.assertEqual(ff.__module__, 'sklearn.preprocessing._data')
         self.assertEqual(type(ff).__name__, 'function')
         self.assertTrue(inspect.isfunction(ff))
 
