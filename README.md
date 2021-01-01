@@ -2,6 +2,7 @@
 [![Python 3.6](https://img.shields.io/badge/python-3.6-brightgreen.svg)](https://www.python.org/downloads/release/python-360/)
 [![PyPI version](https://img.shields.io/pypi/v/python-lambdo.svg)](https://pypi.python.org/pypi/python-lambdo)
 
+[![Paper](https://img.shields.io/badge/Paper-PDF-blueviolet.svg)](https://www.researchgate.net/publication/348079767_On_the_importance_of_functions_in_data_modeling)
 [![Paper](https://img.shields.io/badge/Paper-PDF-blueviolet.svg)](https://www.researchgate.net/publication/337336089_Concept-oriented_model_Modeling_and_processing_data_using_functions)
 [![Paper](https://img.shields.io/badge/Paper-PDF-blueviolet.svg)](https://www.researchgate.net/publication/316551218_From_Group-by_to_Accumulation_Data_Aggregation_Revisited)
 [![Paper](https://img.shields.io/badge/Paper-PDF-blueviolet.svg)](https://www.researchgate.net/publication/303840097_Concept-Oriented_Model_the_Functional_View)
